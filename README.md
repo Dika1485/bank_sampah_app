@@ -1,3 +1,4 @@
+
 -----
 
 # Bank Sampah App
@@ -12,7 +13,7 @@ The Bank Sampah App is a Flutter-based mobile application designed to streamline
 
 ### For Customers (Nasabah)
 
-  - **Registration & Authentication:** Secure sign-up using NIK (National Identity Number) and KTP (Identity Card) photo upload, alongside robust login functionality.
+  - **Registration & Authentication:** Secure sign-up using NIK (Nomor Induk Kependudukan) and robust login functionality.
   - **Waste Deposit:** Easily initiate waste deposits, specifying waste types and estimated weights.
   - **Savings Account (Buku Tabungan):** Track your current balance and view a detailed history of all deposits and withdrawals.
   - **Performance Analytics:** Visualize your contributions with insightful charts, showing the percentage of different waste types in your total deposits.
@@ -22,7 +23,7 @@ The Bank Sampah App is a Flutter-based mobile application designed to streamline
 
 ### For Collectors (Pengepul)
 
-  - **Registration & Authentication:** Secure sign-up with NIK and KTP photo upload, and login capabilities.
+  - **Registration & Authentication:** Secure sign-up with NIK and login capabilities.
   - **Waste Pricing Management:** Set and adjust prices per kilogram (kg) for various waste categories (Organic, Inorganic – including Plastic, Paper, Metal, Glass, etc.).
   - **Deposit Validation:** Receive and validate customer waste deposit requests, updating their savings balance based on actual weight and current prices.
   - **Operational Analytics:** Access charts and reports detailing collected waste volume, distribution by waste type, and overall operational performance.
@@ -34,11 +35,10 @@ The Bank Sampah App is a Flutter-based mobile application designed to streamline
 ## Technology Stack
 
   - **Frontend:** Flutter (Dart)
-  - **Backend:** Firebase (Authentication, Cloud Firestore, Firebase Storage)
+  - **Backend:** Firebase (Authentication, Cloud Firestore)
   - **State Management:** Provider
   - **Charting:** `fl_chart`
   - **PDF Generation:** `pdf`, `path_provider`, `open_filex`
-  - **Image Handling:** `image_picker`
 
 -----
 
@@ -77,14 +77,14 @@ cd bank_sampah_app
       - In the Firebase Console, navigate to:
           - **Authentication:** Go to "Build" \> "Authentication" \> "Sign-in method" and enable "Email/Password."
           - **Firestore Database:** Go to "Build" \> "Firestore Database" and create a database (start in test mode for development).
-          - **Storage:** Go to "Build" \> "Storage" and create a storage bucket (start in test mode for development).
+          - **Storage:** Go to "Build" \> "Storage" and create a storage bucket (Anda mungkin melihat pesan tentang *upgrade*, namun untuk versi ini tanpa unggah KTP, itu tidak terlalu kritis kecuali Anda membutuhkan penyimpanan gambar/file lain).
 4.  **Configure Firebase in Flutter:**
       - Open your terminal in the root of your Flutter project.
       - Run: `flutterfire configure`
       - Follow the prompts to select your Firebase project and desired platforms. This command automatically generates the `lib/firebase_options.dart` file, containing your Firebase configuration.
 5.  **Set up Firebase Security Rules:**
       - In the Firebase Console, go to **Firestore Database \> "Rules"** and **Firebase Storage \> "Rules"**.
-      - Implement security rules as outlined in your project's security documentation (or as discussed previously) to protect your data. **Remember to adjust "test mode" rules for production environments.**
+      - Implement security rules as outlined in your project's security documentation (atau seperti yang dibahas sebelumnya) untuk melindungi data Anda. **Ingatlah untuk menyesuaikan aturan "mode uji" untuk lingkungan produksi.**
 
 ### Step 3: Install Dependencies
 

@@ -63,7 +63,7 @@ class AuthProvider with ChangeNotifier {
     required String password,
     required String nama,
     required String nik,
-    required String noKtp, // Ini akan menjadi URL setelah upload
+    // Parameter noKtp dihapus
     required UserType userType,
   }) async {
     _isLoading = true;
@@ -79,8 +79,7 @@ class AuthProvider with ChangeNotifier {
         'email': email,
         'nama': nama,
         'nik': nik,
-        'noKtp':
-            noKtp, // Asumsi ini sudah URL gambar KTP yang diupload ke Firebase Storage
+        // Properti noKtp dihapus dari data Firestore
         'userType': userType == UserType.nasabah ? 'nasabah' : 'pengepul',
         'createdAt': FieldValue.serverTimestamp(),
       });

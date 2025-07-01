@@ -1,5 +1,3 @@
-import 'package:bank_sampah_app/models/user.dart';
-import 'package:bank_sampah_app/screens/auth/login_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:bank_sampah_app/providers/auth_provider.dart';
@@ -7,6 +5,7 @@ import 'package:bank_sampah_app/widgets/loading_indicator.dart';
 import 'package:bank_sampah_app/screens/common/update_password_screen.dart';
 import 'package:bank_sampah_app/utils/pdf_generator.dart'; // For PDF
 import 'package:bank_sampah_app/providers/transaction_provider.dart'; // For PDF data
+import 'package:bank_sampah_app/screens/auth/login_screen.dart'; // For logout
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -17,9 +16,9 @@ class ProfileScreen extends StatelessWidget {
     final appUser = authProvider.appUser;
 
     if (appUser == null) {
-      return Scaffold(
-        appBar: AppBar(title: const Text('Profil')),
-        body: const Center(child: Text('Data pengguna tidak tersedia.')),
+      return const Scaffold(
+        appBar: AppBar(title: Text('Profil')),
+        body: Center(child: Text('Data pengguna tidak tersedia.')),
       );
     }
 
@@ -61,6 +60,7 @@ class ProfileScreen extends StatelessWidget {
                           _buildProfileInfoRow('Nama Lengkap', appUser.nama),
                           _buildProfileInfoRow('Email', appUser.email),
                           _buildProfileInfoRow('NIK', appUser.nik),
+                          // Tampilan KTP dihapus
                           _buildProfileInfoRow(
                             'Tipe Pengguna',
                             appUser.userType

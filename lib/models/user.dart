@@ -5,7 +5,8 @@ class AppUser {
   final String email;
   final String nama;
   final String nik;
-  final String noKtp; // Mungkin path URL gambar KTP atau string NIK
+  // Properti noKtp dihapus
+
   final UserType userType;
 
   AppUser({
@@ -13,7 +14,7 @@ class AppUser {
     required this.email,
     required this.nama,
     required this.nik,
-    required this.noKtp,
+    // noKtp dihapus dari konstruktor
     required this.userType,
   });
 
@@ -24,7 +25,7 @@ class AppUser {
       email: data['email'] ?? '',
       nama: data['nama'] ?? '',
       nik: data['nik'] ?? '',
-      noKtp: data['noKtp'] ?? '',
+      // noKtp tidak lagi dimuat dari Firestore
       userType: (data['userType'] == 'nasabah')
           ? UserType.nasabah
           : UserType.pengepul,
@@ -37,7 +38,7 @@ class AppUser {
       'email': email,
       'nama': nama,
       'nik': nik,
-      'noKtp': noKtp,
+      // noKtp tidak lagi disimpan ke Firestore
       'userType': userType == UserType.nasabah ? 'nasabah' : 'pengepul',
     };
   }

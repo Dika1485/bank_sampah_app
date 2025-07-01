@@ -1,10 +1,9 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:firebase_storage/firebase_storage.dart'; // Import Firebase Storage
 import 'package:bank_sampah_app/providers/auth_provider.dart';
 import 'package:bank_sampah_app/models/user.dart'; // Pastikan AppUser dan UserType ada
+import 'package:bank_sampah_app/widgets/loading_indicator.dart'; // Pastikan ini diimpor
+import 'package:bank_sampah_app/utils/validators.dart'; // Import validator
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -21,7 +20,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final TextEditingController _nikController = TextEditingController();
 
   UserType? _selectedUserType;
-  File? _ktpImageFile; // Untuk menyimpan gambar KTP yang dipilih
 
   @override
   void dispose() {
@@ -30,21 +28,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
     _namaController.dispose();
     _nikController.dispose();
     super.dispose();
-  }
-
-  // Fungsi untuk memilih gambar dari galeri
-  Future<void> _pickImage() async {
-    final picker = ImagePicker();
-    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
-    setState(() {
-      if (pickedFile != null) {
-        _ktpImageFile = File(pickedFile.path);
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Tidak ada gambar yang dipilih.')),
-        );
-      }
-    });
   }
 
   void _register() async {
@@ -57,43 +40,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
         );
         return;
       }
-      if (_ktpImageFile == null) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Mohon unggah foto KTP.')));
-        return;
-      }
 
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
-      // --- Upload Gambar KTP ke Firebase Storage ---
-      String ktpImageUrl = '';
-      try {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Mengunggah KTP...')));
-        final storageRef = FirebaseStorage.instance
-            .ref()
-            .child('ktp_images')
-            .child(
-              '${_nikController.text}_${DateTime.now().millisecondsSinceEpoch}.jpg',
-            );
-        await storageRef.putFile(_ktpImageFile!);
-        ktpImageUrl = await storageRef.getDownloadURL();
-      } catch (e) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Gagal mengunggah KTP: $e')));
-        return; // Hentikan proses jika upload gagal
-      }
-      // --- Selesai Upload Gambar KTP ---
+      // Tidak ada lagi logika unggah KTP di sini
+      // Langsung panggil fungsi register di AuthProvider
 
       await authProvider.register(
         email: _emailController.text,
         password: _passwordController.text,
         nama: _namaController.text,
         nik: _nikController.text,
-        noKtp: ktpImageUrl, // Kirim URL gambar KTP
         userType: _selectedUserType!,
       );
 
@@ -133,12 +90,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     labelText: 'Nama Lengkap',
                     border: OutlineInputBorder(),
                   ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Nama tidak boleh kosong';
-                    }
-                    return null;
-                  },
+                  validator: (value) =>
+                      AppValidators.validateRequired(value, 'Nama Lengkap'),
                 ),
                 const SizedBox(height: 16.0),
                 TextFormField(
@@ -148,26 +101,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     border: OutlineInputBorder(),
                   ),
                   keyboardType: TextInputType.number,
-                  validator: (value) {
-                    if (value == null || value.isEmpty || value.length != 16) {
-                      return 'NIK harus 16 digit';
-                    }
-                    return null;
-                  },
+                  validator: (value) => AppValidators.validateNIK(value),
                 ),
                 const SizedBox(height: 16.0),
-                // Bagian Upload KTP
-                ElevatedButton.icon(
-                  onPressed: _pickImage,
-                  icon: const Icon(Icons.upload_file),
-                  label: const Text('Unggah Foto KTP'),
-                ),
-                if (_ktpImageFile != null)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 8.0),
-                    child: Image.file(_ktpImageFile!, height: 100),
-                  ),
-                const SizedBox(height: 16.0),
+                // Bagian Unggah KTP telah dihapus
                 TextFormField(
                   controller: _emailController,
                   decoration: const InputDecoration(
@@ -175,14 +112,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     border: OutlineInputBorder(),
                   ),
                   keyboardType: TextInputType.emailAddress,
-                  validator: (value) {
-                    if (value == null ||
-                        value.isEmpty ||
-                        !value.contains('@')) {
-                      return 'Masukkan email yang valid';
-                    }
-                    return null;
-                  },
+                  validator: (value) => AppValidators.validateEmail(value),
                 ),
                 const SizedBox(height: 16.0),
                 TextFormField(
@@ -192,12 +122,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     border: OutlineInputBorder(),
                   ),
                   obscureText: true,
-                  validator: (value) {
-                    if (value == null || value.isEmpty || value.length < 6) {
-                      return 'Password minimal 6 karakter';
-                    }
-                    return null;
-                  },
+                  validator: (value) => AppValidators.validatePassword(value),
                 ),
                 const SizedBox(height: 16.0),
                 // Pilihan Jenis Pengguna
@@ -222,18 +147,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       _selectedUserType = newValue;
                     });
                   },
-                  validator: (value) {
-                    if (value == null) {
-                      return 'Pilih jenis pengguna';
-                    }
-                    return null;
-                  },
+                  validator: (value) => AppValidators.validateRequired(
+                    value?.toString(),
+                    'Jenis Pengguna',
+                  ),
                 ),
                 const SizedBox(height: 24.0),
                 Consumer<AuthProvider>(
                   builder: (context, authProvider, child) {
                     return authProvider.isLoading
-                        ? const CircularProgressIndicator()
+                        ? const LoadingIndicator()
                         : ElevatedButton(
                             onPressed: _register,
                             style: ElevatedButton.styleFrom(
