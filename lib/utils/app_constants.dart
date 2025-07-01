@@ -20,6 +20,5 @@ class AppConstants {
   static const String transactionStatusCompleted = 'completed';
   static const String transactionStatusRejected = 'rejected';
 
-  // Other constants (e.g., image upload paths)
-  static const String ktpImagesStoragePath = 'ktp_images';
+  // Other constants (ktpImagesStoragePath dihapus)
 }
