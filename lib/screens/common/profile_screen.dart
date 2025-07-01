@@ -1,3 +1,4 @@
+import 'package:bank_sampah_app/models/user.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:bank_sampah_app/providers/auth_provider.dart';
@@ -16,9 +17,9 @@ class ProfileScreen extends StatelessWidget {
     final appUser = authProvider.appUser;
 
     if (appUser == null) {
-      return const Scaffold(
-        appBar: AppBar(title: Text('Profil')),
-        body: Center(child: Text('Data pengguna tidak tersedia.')),
+      return Scaffold(
+        appBar: AppBar(title: const Text('Profil')),
+        body: const Center(child: Text('Data pengguna tidak tersedia.')),
       );
     }
 
