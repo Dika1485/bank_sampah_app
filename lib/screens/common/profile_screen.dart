@@ -61,7 +61,6 @@ class ProfileScreen extends StatelessWidget {
                           _buildProfileInfoRow('Nama Lengkap', appUser.nama),
                           _buildProfileInfoRow('Email', appUser.email),
                           _buildProfileInfoRow('NIK', appUser.nik),
-                          // Tampilan KTP dihapus
                           _buildProfileInfoRow(
                             'Tipe Pengguna',
                             appUser.userType
@@ -109,7 +108,6 @@ class ProfileScreen extends StatelessWidget {
                                         transactionProvider.nasabahBalance,
                                   );
                                 } else {
-                                  // Pengepul
                                   // In a real app, you would fetch all relevant transactions for the Pengepul,
                                   // not just nasabahTransactions. This is a placeholder.
                                   await PdfGenerator.generatePengepulReport(
@@ -145,16 +143,10 @@ class ProfileScreen extends StatelessWidget {
                   const SizedBox(height: 20),
                   Center(
                     child: ElevatedButton(
-                      onPressed: () async {
-                        await authProvider.signOut();
-                        if (context.mounted) {
-                          Navigator.of(context).pushReplacement(
-                            MaterialPageRoute(
-                              builder: (context) => const LoginScreen(),
-                            ), // Assuming LoginScreen is the entry point
-                          );
-                        }
-                      },
+                      onPressed: () => _confirmLogout(
+                        context,
+                        authProvider,
+                      ), // Use a confirmation dialog
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.red,
                         padding: const EdgeInsets.symmetric(
@@ -177,6 +169,7 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
+  // Helper method for profile info rows
   Widget _buildProfileInfoRow(String label, String value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
@@ -192,6 +185,51 @@ class ProfileScreen extends StatelessWidget {
           const Divider(height: 16),
         ],
       ),
+    );
+  }
+
+  // New method to handle logout with confirmation
+  void _confirmLogout(BuildContext context, AuthProvider authProvider) {
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          title: const Text('Konfirmasi Logout'),
+          content: const Text('Apakah Anda yakin ingin keluar?'),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop(); // Dismiss dialog
+              },
+              child: const Text('Batal'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                Navigator.of(dialogContext).pop(); // Dismiss dialog first
+                await authProvider.signOut();
+                if (context.mounted) {
+                  // Navigate to LoginScreen after successful logout
+                  Navigator.of(context).pushAndRemoveUntil(
+                    MaterialPageRoute(
+                      builder: (context) => const LoginScreen(),
+                    ),
+                    (Route<dynamic> route) =>
+                        false, // Remove all previous routes
+                  );
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor:
+                    Colors.red, // Use a distinct color for confirmation
+              ),
+              child: const Text(
+                'Logout',
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }

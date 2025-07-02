@@ -79,4 +79,16 @@ class Transaction {
         return TransactionStatus.pending; // Default atau throw error
     }
   }
+
+  @override
+  bool operator ==(Object other) {
+    // Dua objek Transaction dianggap sama jika ID-nya sama
+    if (identical(this, other))
+      return true; // Jika objeknya sama persis di memori
+    return other is Transaction && // Jika 'other' adalah objek Transaction
+        other.id == id; // Dan ID-nya sama
+  }
+
+  @override
+  int get hashCode => id.hashCode; // Hash code harus berdasarkan ID
 }

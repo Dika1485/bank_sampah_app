@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:bank_sampah_app/providers/auth_provider.dart';
-import 'package:bank_sampah_app/models/user.dart'; // Pastikan AppUser dan UserType ada
-import 'package:bank_sampah_app/widgets/loading_indicator.dart'; // Pastikan ini diimpor
+import 'package:bank_sampah_app/models/user.dart';
+import 'package:bank_sampah_app/widgets/loading_indicator.dart';
 import 'package:bank_sampah_app/utils/validators.dart'; // Import validator
 
 class RegisterScreen extends StatefulWidget {
@@ -42,9 +42,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
       }
 
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
-
-      // Tidak ada lagi logika unggah KTP di sini
-      // Langsung panggil fungsi register di AuthProvider
 
       await authProvider.register(
         email: _emailController.text,

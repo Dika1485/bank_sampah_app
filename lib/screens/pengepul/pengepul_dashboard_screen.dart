@@ -9,6 +9,7 @@ import 'package:bank_sampah_app/screens/common/profile_screen.dart';
 import 'package:bank_sampah_app/screens/auth/login_screen.dart'; // Untuk logout
 import 'package:bank_sampah_app/widgets/loading_indicator.dart';
 import 'package:intl/intl.dart';
+import 'package:bank_sampah_app/screens/pengepul/validasi_pencairan_screen.dart'; // Import for withdrawal validation screen
 
 class PengepulDashboardScreen extends StatefulWidget {
   const PengepulDashboardScreen({super.key});
@@ -23,10 +24,17 @@ class _PengepulDashboardScreenState extends State<PengepulDashboardScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Pengepul perlu mendengarkan setoran pending
       Provider.of<TransactionProvider>(
         context,
         listen: false,
       ).listenToPendingPengepulValidations();
+      // --- TAMBAHAN: Pengepul juga perlu mendengarkan permintaan pencairan pending ---
+      Provider.of<TransactionProvider>(
+        context,
+        listen: false,
+      ).listenToPendingWithdrawalRequests();
+      // ----------------------------------------------------------------------------------
       // TODO: Pengepul dashboard might also need aggregated historical data
       // For a full Pengepul report, all completed transactions might be needed.
     });
@@ -47,6 +55,10 @@ class _PengepulDashboardScreenState extends State<PengepulDashboardScreen> {
     }
 
     final String pengepulName = authProvider.appUser?.nama ?? 'Pengepul';
+    final int pendingSetoranCount =
+        transactionProvider.pendingPengepulValidations.length;
+    final int pendingWithdrawalCount =
+        transactionProvider.pendingWithdrawalRequests.length;
 
     return Scaffold(
       appBar: AppBar(
@@ -58,17 +70,6 @@ class _PengepulDashboardScreenState extends State<PengepulDashboardScreen> {
               Navigator.of(context).push(
                 MaterialPageRoute(builder: (context) => const ProfileScreen()),
               );
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () async {
-              await authProvider.signOut();
-              if (mounted) {
-                Navigator.of(context).pushReplacement(
-                  MaterialPageRoute(builder: (context) => const LoginScreen()),
-                );
-              }
             },
           ),
         ],
@@ -88,83 +89,172 @@ class _PengepulDashboardScreenState extends State<PengepulDashboardScreen> {
                     ),
                   ),
                   const SizedBox(height: 20),
+                  // Card untuk Setoran Menunggu Validasi
                   Card(
                     elevation: 4,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(20.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Setoran Menunggu Validasi:',
-                            style: TextStyle(fontSize: 18, color: Colors.grey),
+                    child: InkWell(
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => const ValidasiSetoranScreen(),
                           ),
-                          const SizedBox(height: 8),
-                          Text(
-                            '${transactionProvider.pendingPengepulValidations.length} Permintaan',
-                            style: const TextStyle(
-                              fontSize: 36,
-                              fontWeight: FontWeight.bold,
+                        );
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.all(20.0),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.pending_actions,
+                              size: 40,
                               color: Colors.orange,
                             ),
-                          ),
-                          const SizedBox(height: 16),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                            children: [
-                              Expanded(
-                                child: ElevatedButton.icon(
-                                  onPressed: () {
-                                    Navigator.of(context).push(
-                                      MaterialPageRoute(
-                                        builder: (context) =>
-                                            const ValidasiSetoranScreen(),
-                                      ),
-                                    );
-                                  },
-                                  icon: const Icon(Icons.check_circle_outline),
-                                  label: const Text('Validasi Setoran'),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.orange,
-                                    padding: const EdgeInsets.symmetric(
-                                      vertical: 12,
-                                    ),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(8),
+                            const SizedBox(width: 15),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'Setoran Menunggu Validasi:',
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
                                     ),
                                   ),
-                                ),
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: ElevatedButton.icon(
-                                  onPressed: () {
-                                    Navigator.of(context).push(
-                                      MaterialPageRoute(
-                                        builder: (context) =>
-                                            const HargaSampahScreen(),
-                                      ),
-                                    );
-                                  },
-                                  icon: const Icon(Icons.attach_money),
-                                  label: const Text('Atur Harga'),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.indigo,
-                                    padding: const EdgeInsets.symmetric(
-                                      vertical: 12,
-                                    ),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(8),
+                                  const SizedBox(height: 5),
+                                  Text(
+                                    '$pendingSetoranCount Transaksi',
+                                    style: const TextStyle(
+                                      fontSize: 24,
+                                      color: Colors.blue,
                                     ),
                                   ),
-                                ),
+                                ],
                               ),
-                            ],
+                            ),
+                            const Icon(
+                              Icons.arrow_forward_ios,
+                              color: Colors.grey,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 15),
+                  // Card untuk Permintaan Pencairan Pending
+                  Card(
+                    elevation: 4,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: InkWell(
+                      onTap: () {
+                        // Navigasi ke layar validasi pencairan
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                const ValidasiPencairanScreen(), // Anda perlu membuat layar ini
                           ),
-                        ],
+                        );
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.all(20.0),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.account_balance_wallet,
+                              size: 40,
+                              color: Colors.purple,
+                            ),
+                            const SizedBox(width: 15),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'Permintaan Pencairan Pending:',
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 5),
+                                  Text(
+                                    '$pendingWithdrawalCount Permintaan',
+                                    style: const TextStyle(
+                                      fontSize: 24,
+                                      color: Colors.red,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const Icon(
+                              Icons.arrow_forward_ios,
+                              color: Colors.grey,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 15),
+                  // Card untuk Mengelola Harga Sampah
+                  Card(
+                    elevation: 4,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: InkWell(
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => const HargaSampahScreen(),
+                          ),
+                        );
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.all(20.0),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.price_change,
+                              size: 40,
+                              color: Colors.green,
+                            ),
+                            const SizedBox(width: 15),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'Kelola Harga Sampah:',
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 5),
+                                  Text(
+                                    'Atur harga beli sampah',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      color: Colors.grey[600],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const Icon(
+                              Icons.arrow_forward_ios,
+                              color: Colors.grey,
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -175,12 +265,12 @@ class _PengepulDashboardScreenState extends State<PengepulDashboardScreen> {
                   ),
                   const SizedBox(height: 10),
                   // Pengepul Chart (requires all transactions, not just pending)
-                  // For simplicity, let's pass Nasabah's transactions here,
-                  // but in a real app, you'd fetch all relevant transactions for the Pengepul.
+                  // TODO: Pengepul chart data should be based on ALL validated transactions, not just Nasabah's.
+                  // Currently using nasabahTransactions as a placeholder. You'll need to add a new stream
+                  // to TransactionProvider to fetch all completed transactions relevant to the pengepul.
                   PengepulChartWidget(
                     transactions: transactionProvider.nasabahTransactions,
                   ),
-                  // TODO: Pengepul chart data should be based on ALL validated transactions, not just Nasabah's
                   const SizedBox(height: 20),
                   const Text(
                     'Setoran Menunggu Validasi (Terbaru):',
@@ -226,7 +316,7 @@ class _PengepulDashboardScreenState extends State<PengepulDashboardScreen> {
                                 ),
                                 subtitle: Text(
                                   '${transaction.sampahTypeName} - ${transaction.weightKg.toStringAsFixed(2)} kg (estimasi)\n'
-                                  '${DateFormat('dd MMM yyyy HH:mm').format(transaction.timestamp)}',
+                                  '${DateFormat('dd MMM HH:mm').format(transaction.timestamp)}',
                                 ),
                                 trailing: ElevatedButton(
                                   onPressed: () {
@@ -267,11 +357,19 @@ class _PengepulDashboardScreenState extends State<PengepulDashboardScreen> {
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
           BottomNavigationBarItem(
             icon: Icon(Icons.check_circle),
-            label: 'Validasi',
+            label: 'Validasi Setoran', // Label diubah agar lebih jelas
           ),
-          BottomNavigationBarItem(icon: Icon(Icons.money), label: 'Harga'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.money_off), // Icon untuk validasi pencairan
+            label: 'Validasi Cair', // Label untuk validasi pencairan
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.attach_money),
+            label: 'Harga',
+          ),
         ],
         currentIndex: 0, // Currently on Dashboard
+        type: BottomNavigationBarType.fixed,
         onTap: (index) {
           if (index == 1) {
             Navigator.of(context).push(
@@ -280,6 +378,14 @@ class _PengepulDashboardScreenState extends State<PengepulDashboardScreen> {
               ),
             );
           } else if (index == 2) {
+            // Navigasi ke Validasi Pencairan
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) =>
+                    const ValidasiPencairanScreen(), // Pastikan layar ini ada
+              ),
+            );
+          } else if (index == 3) {
             Navigator.of(context).push(
               MaterialPageRoute(
                 builder: (context) => const HargaSampahScreen(),

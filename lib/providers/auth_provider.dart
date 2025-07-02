@@ -21,70 +21,87 @@ class AuthProvider with ChangeNotifier {
     _auth.authStateChanges().listen((User? user) {
       _firebaseUser = user;
       if (user != null) {
+        // Ketika auth state berubah, muat ulang AppUser
         _loadAppUser(user.uid);
       } else {
         _appUser = null;
-        notifyListeners();
+        notifyListeners(); // Beri tahu listener bahwa user sudah logout
       }
     });
   }
 
-  Future<void> _loadAppUser(String uid) async {
+  // Metode ini sekarang mengembalikan AppUser setelah dimuat
+  Future<AppUser?> _loadAppUser(String uid) async {
     try {
       final doc = await _firestore.collection('users').doc(uid).get();
       if (doc.exists) {
         _appUser = AppUser.fromFirestore(doc.data()!, doc.id);
+        notifyListeners(); // Beri tahu listener setelah _appUser diatur
+        return _appUser;
       }
     } catch (e) {
       _errorMessage = 'Gagal memuat data pengguna: $e';
-    } finally {
       notifyListeners();
     }
+    return null;
   }
 
-  Future<void> signIn(String email, String password) async {
+  // Mengembalikan AppUser? untuk memudahkan penanganan di UI
+  Future<AppUser?> signIn(String email, String password) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
+    AppUser? loggedInUser;
     try {
-      await _auth.signInWithEmailAndPassword(email: email, password: password);
+      UserCredential userCredential = await _auth.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+      if (userCredential.user != null) {
+        loggedInUser = await _loadAppUser(
+          userCredential.user!.uid,
+        ); // Pastikan AppUser dimuat sebelum kembali
+      }
     } on FirebaseAuthException catch (e) {
       _errorMessage = _mapFirebaseAuthError(e.code);
     } catch (e) {
       _errorMessage = 'Terjadi kesalahan tidak terduga: $e';
     } finally {
       _isLoading = false;
-      notifyListeners();
+      notifyListeners(); // Update UI dengan status loading dan error terbaru
     }
+    return loggedInUser;
   }
 
-  Future<void> register({
+  // Mengembalikan AppUser? untuk memudahkan penanganan di UI
+  Future<AppUser?> register({
     required String email,
     required String password,
     required String nama,
     required String nik,
-    // Parameter noKtp dihapus
     required UserType userType,
   }) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
+    AppUser? registeredUser;
     try {
       UserCredential userCredential = await _auth
           .createUserWithEmailAndPassword(email: email, password: password);
       String uid = userCredential.user!.uid;
 
-      // Simpan data user tambahan di Firestore
       await _firestore.collection('users').doc(uid).set({
         'email': email,
         'nama': nama,
         'nik': nik,
-        // Properti noKtp dihapus dari data Firestore
         'userType': userType == UserType.nasabah ? 'nasabah' : 'pengepul',
         'createdAt': FieldValue.serverTimestamp(),
+        'balance': 0.0, // Inisialisasi saldo untuk nasabah baru jika perlu
       });
 
-      await _loadAppUser(uid); // Muat data AppUser setelah registrasi
+      registeredUser = await _loadAppUser(
+        uid,
+      ); // Pastikan AppUser dimuat setelah register
     } on FirebaseAuthException catch (e) {
       _errorMessage = _mapFirebaseAuthError(e.code);
     } catch (e) {
@@ -93,10 +110,38 @@ class AuthProvider with ChangeNotifier {
       _isLoading = false;
       notifyListeners();
     }
+    return registeredUser;
+  }
+
+  Future<List<AppUser>> fetchPengepulUsers() async {
+    try {
+      final querySnapshot = await _firestore
+          .collection('users')
+          .where('userType', isEqualTo: 'pengepul')
+          .get();
+      return querySnapshot.docs
+          .map((doc) => AppUser.fromFirestore(doc.data()!, doc.id))
+          .toList();
+    } catch (e) {
+      print('Error fetching pengepul users: $e');
+      return [];
+    }
   }
 
   Future<void> signOut() async {
-    await _auth.signOut();
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+    try {
+      await _auth.signOut();
+      _appUser = null; // Pastikan _appUser direset saat logout
+      _firebaseUser = null; // Pastikan _firebaseUser direset saat logout
+    } catch (e) {
+      _errorMessage = 'Gagal logout: $e';
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
   }
 
   String _mapFirebaseAuthError(String code) {
@@ -111,6 +156,8 @@ class AuthProvider with ChangeNotifier {
         return 'Password terlalu lemah.';
       case 'invalid-email':
         return 'Format email tidak valid.';
+      case 'network-request-failed':
+        return 'Tidak ada koneksi internet. Coba lagi.';
       default:
         return 'Gagal autentikasi. Silakan coba lagi.';
     }

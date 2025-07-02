@@ -1,11 +1,13 @@
+import 'package:bank_sampah_app/utils/pdf_generator.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:bank_sampah_app/providers/transaction_provider.dart';
 import 'package:bank_sampah_app/providers/auth_provider.dart';
+import 'package:bank_sampah_app/providers/transaction_provider.dart';
 import 'package:bank_sampah_app/widgets/loading_indicator.dart';
 import 'package:intl/intl.dart';
 import 'package:bank_sampah_app/models/transaction.dart';
-import 'package:bank_sampah_app/utils/pdf_generator.dart'; // For PDF generation
+// Tidak perlu import 'package:bank_sampah_app/utils/pdf_generator.dart'; di sini jika hanya untuk PDF,
+// tapi jika ada penggunaan lain biarkan saja.
 
 class BukuTabunganScreen extends StatefulWidget {
   const BukuTabunganScreen({super.key});
@@ -18,14 +20,16 @@ class _BukuTabunganScreenState extends State<BukuTabunganScreen> {
   @override
   void initState() {
     super.initState();
-    // Ensure transactions are loaded for the current user
+    // Ensure transactions and balance are loaded for the current user
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       if (authProvider.appUser != null) {
+        // --- PERUBAHAN DI SINI: listenToNasabahData() ---
         Provider.of<TransactionProvider>(
           context,
           listen: false,
-        ).listenToNasabahTransactions(authProvider.appUser!.id);
+        ).listenToNasabahData(authProvider.appUser!.id);
+        // --------------------------------------------------
       }
     });
   }
@@ -56,7 +60,11 @@ class _BukuTabunganScreenState extends State<BukuTabunganScreen> {
                 );
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Laporan PDF dibuat.')),
+                    const SnackBar(
+                      content: Text(
+                        'Fungsi cetak laporan sedang dikembangkan.',
+                      ),
+                    ),
                   );
                 }
               }
@@ -147,7 +155,7 @@ class _BukuTabunganScreenState extends State<BukuTabunganScreen> {
                                       : 'Pencairan Dana',
                                 ),
                                 subtitle: Text(
-                                  '${DateFormat('dd MMM yyyy HH:mm').format(transaction.timestamp)} - ${transaction.weightKg > 0 ? '${transaction.weightKg.toStringAsFixed(2)} kg - ' : ''}Status: ${transaction.status.toString().split('.').last.toUpperCase()}',
+                                  '${DateFormat('dd MMM HH:mm').format(transaction.timestamp)} - ${transaction.weightKg > 0 ? '${transaction.weightKg.toStringAsFixed(2)} kg - ' : ''}Status: ${transaction.status.toString().split('.').last.toUpperCase()}',
                                 ),
                                 trailing: Text(
                                   NumberFormat.currency(
