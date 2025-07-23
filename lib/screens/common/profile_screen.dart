@@ -23,6 +23,10 @@ class ProfileScreen extends StatelessWidget {
       );
     }
 
+    // Determine validation status text and color
+    String validationStatusText = appUser.validated ? 'Valid' : 'Belum Valid';
+    Color validationStatusColor = appUser.validated ? Colors.green : Colors.red;
+
     return Scaffold(
       appBar: AppBar(title: const Text('Profil Saya')),
       body: authProvider.isLoading
@@ -69,6 +73,28 @@ class ProfileScreen extends StatelessWidget {
                                 .last
                                 .toUpperCase(),
                           ),
+                          // Tampilkan kolom validasi hanya jika userType bukan nasabah
+                          if (appUser.userType != UserType.nasabah)
+                            _buildProfileInfoRow(
+                              'Status Validasi',
+                              validationStatusText,
+                              valueColor: validationStatusColor,
+                            ),
+                          // Tampilkan peringatan jika belum valid dan bukan nasabah
+                          if (appUser.userType != UserType.nasabah &&
+                              !appUser.validated)
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                vertical: 8.0,
+                              ),
+                              child: Text(
+                                'Peringatan: Akun Anda belum divalidasi. Mohon hubungi Sekretaris atau Direktur untuk validasi.',
+                                style: TextStyle(
+                                  color: Theme.of(context).colorScheme.error,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
                           const SizedBox(height: 10),
                           Center(
                             child: ElevatedButton.icon(
@@ -91,51 +117,51 @@ class ProfileScreen extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(height: 10),
-                          Center(
-                            child: ElevatedButton.icon(
-                              onPressed: () async {
-                                final transactionProvider =
-                                    Provider.of<TransactionProvider>(
-                                      context,
-                                      listen: false,
-                                    );
-                                if (appUser.userType == UserType.nasabah) {
-                                  await PdfGenerator.generateNasabahReport(
-                                    nasabah: appUser,
-                                    transactions:
-                                        transactionProvider.nasabahTransactions,
-                                    currentBalance:
-                                        transactionProvider.nasabahBalance,
-                                  );
-                                } else {
-                                  // In a real app, you would fetch all relevant transactions for the Pengepul,
-                                  // not just nasabahTransactions. This is a placeholder.
-                                  await PdfGenerator.generatePengepulReport(
-                                    pengepul: appUser,
-                                    allTransactions: transactionProvider
-                                        .nasabahTransactions, // Placeholder: replace with actual Pengepul transactions
-                                  );
-                                }
-                                if (context.mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text(
-                                        'Laporan PDF berhasil dibuat.',
-                                      ),
-                                    ),
-                                  );
-                                }
-                              },
-                              icon: const Icon(Icons.picture_as_pdf),
-                              label: const Text('Cetak Laporan'),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.redAccent,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                              ),
-                            ),
-                          ),
+                          // Center(
+                          //   child: ElevatedButton.icon(
+                          //     onPressed: () async {
+                          //       final transactionProvider =
+                          //           Provider.of<TransactionProvider>(
+                          //             context,
+                          //             listen: false,
+                          //           );
+                          //       if (appUser.userType == UserType.nasabah) {
+                          //         await PdfGenerator.generateNasabahReport(
+                          //           nasabah: appUser,
+                          //           transactions:
+                          //               transactionProvider.nasabahTransactions,
+                          //           currentBalance:
+                          //               transactionProvider.nasabahBalance,
+                          //         );
+                          //       } else {
+                          //         // In a real app, you would fetch all relevant transactions for the Pengepul,
+                          //         // not just nasabahTransactions. This is a placeholder.
+                          //         await PdfGenerator.generatePengepulReport(
+                          //           pengepul: appUser,
+                          //           allTransactions: transactionProvider
+                          //               .nasabahTransactions, // Placeholder: replace with actual Pengepul transactions
+                          //         );
+                          //       }
+                          //       if (context.mounted) {
+                          //         ScaffoldMessenger.of(context).showSnackBar(
+                          //           const SnackBar(
+                          //             content: Text(
+                          //               'Laporan PDF berhasil dibuat.',
+                          //             ),
+                          //           ),
+                          //         );
+                          //       }
+                          //     },
+                          //     icon: const Icon(Icons.picture_as_pdf),
+                          //     label: const Text('Cetak Laporan'),
+                          //     style: ElevatedButton.styleFrom(
+                          //       backgroundColor: Colors.redAccent,
+                          //       shape: RoundedRectangleBorder(
+                          //         borderRadius: BorderRadius.circular(8),
+                          //       ),
+                          //     ),
+                          //   ),
+                          // ),
                         ],
                       ),
                     ),
@@ -170,7 +196,7 @@ class ProfileScreen extends StatelessWidget {
   }
 
   // Helper method for profile info rows
-  Widget _buildProfileInfoRow(String label, String value) {
+  Widget _buildProfileInfoRow(String label, String value, {Color? valueColor}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Column(
@@ -180,7 +206,11 @@ class ProfileScreen extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             value,
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+              color: valueColor, // Tambahkan opsi warna
+            ),
           ),
           const Divider(height: 16),
         ],

@@ -1,4 +1,7 @@
 import 'package:bank_sampah_app/models/user.dart';
+import 'package:bank_sampah_app/screens/admin/admin_dashboard_screen.dart';
+import 'package:bank_sampah_app/screens/admin/user_validation_screen.dart';
+import 'package:bank_sampah_app/screens/common/profile_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:bank_sampah_app/providers/auth_provider.dart';
@@ -44,7 +47,19 @@ class _LoginScreenState extends State<LoginScreen> {
           Navigator.of(context).pushReplacement(
             MaterialPageRoute(builder: (_) => const NasabahDashboardScreen()),
           );
-        } else {
+        } else if (authProvider.appUser!.validated == false) {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (_) => const ProfileScreen()),
+          );
+        } else if (authProvider.appUser!.userType == UserType.direktur) {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (_) => const AdminDashboardScreen()),
+          );
+        } else if (authProvider.appUser!.userType == UserType.sekretaris) {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (_) => const AdminDashboardScreen()),
+          );
+        } else if (authProvider.appUser!.userType == UserType.bendahara) {
           Navigator.of(context).pushReplacement(
             MaterialPageRoute(builder: (_) => const PengepulDashboardScreen()),
           );
@@ -121,7 +136,9 @@ class _LoginScreenState extends State<LoginScreen> {
                 TextButton(
                   onPressed: () {
                     // TODO: Navigasi ke halaman registrasi
-                    Navigator.of(context).pushNamed('/register');
+                    Navigator.of(context).pushReplacement(
+                      MaterialPageRoute(builder: (_) => const LoginScreen()),
+                    );
                     print('Go to Register Page');
                   },
                   child: const Text('Belum punya akun? Daftar di sini'),

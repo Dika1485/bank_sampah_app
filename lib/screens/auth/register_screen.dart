@@ -1,3 +1,4 @@
+import 'package:bank_sampah_app/screens/auth/login_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:bank_sampah_app/providers/auth_provider.dart';
@@ -33,11 +34,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
   void _register() async {
     if (_formKey.currentState!.validate()) {
       if (_selectedUserType == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Pilih jenis pengguna (Nasabah/Pengepul).'),
-          ),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Pilih jenis pengguna.')));
         return;
       }
 
@@ -135,8 +134,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       child: Text('Nasabah'),
                     ),
                     DropdownMenuItem(
-                      value: UserType.pengepul,
-                      child: Text('Pengepul'),
+                      value: UserType.direktur,
+                      child: Text('Direktur'),
+                    ),
+                    DropdownMenuItem(
+                      value: UserType.sekretaris,
+                      child: Text('Sekretaris'),
+                    ),
+                    DropdownMenuItem(
+                      value: UserType.bendahara,
+                      child: Text('Bendahara'),
+                    ),
+                    DropdownMenuItem(
+                      value: UserType.edukasi,
+                      child: Text('Edukasi'),
                     ),
                   ],
                   onChanged: (UserType? newValue) {
@@ -172,7 +183,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 const SizedBox(height: 16.0),
                 TextButton(
                   onPressed: () {
-                    Navigator.of(context).pop(); // Kembali ke halaman login
+                    Navigator.of(context).pushReplacement(
+                      MaterialPageRoute(builder: (_) => const LoginScreen()),
+                    ); // Kembali ke halaman login
                   },
                   child: const Text('Sudah punya akun? Login di sini'),
                 ),

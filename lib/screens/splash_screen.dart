@@ -34,7 +34,7 @@ class _SplashScreenState extends State<SplashScreen> {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (_) => const NasabahDashboardScreen()),
         );
-      } else if (authProvider.appUser?.userType == UserType.pengepul) {
+      } else if (authProvider.appUser?.userType == UserType.bendahara) {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (_) => const PengepulDashboardScreen()),
         );

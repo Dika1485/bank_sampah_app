@@ -106,7 +106,7 @@ class _ValidasiSetoranScreenState extends State<ValidasiSetoranScreen> {
 
     final String? currentPengepulId = authProvider.appUser?.id;
     if (currentPengepulId == null ||
-        authProvider.appUser?.userType != UserType.pengepul) {
+        authProvider.appUser?.userType != UserType.bendahara) {
       _showSnackBar('Anda tidak memiliki izin untuk melakukan validasi.');
       return;
     }

@@ -1,4 +1,4 @@
-enum UserType { nasabah, pengepul }
+enum UserType { nasabah, direktur, sekretaris, bendahara, edukasi }
 
 class AppUser {
   final String id;
@@ -6,6 +6,7 @@ class AppUser {
   final String nama;
   final String nik;
   final UserType userType;
+  final bool validated;
   final double balance;
 
   AppUser({
@@ -14,6 +15,7 @@ class AppUser {
     required this.nama,
     required this.nik,
     required this.userType,
+    required this.validated,
     this.balance = 0.0, // Default 0.0 jika tidak ada di Firestore
   });
 
@@ -23,9 +25,16 @@ class AppUser {
       email: data['email'] ?? '',
       nama: data['nama'] ?? '',
       nik: data['nik'] ?? '',
-      userType: (data['userType'] == 'nasabah')
-          ? UserType.nasabah
-          : UserType.pengepul,
+      userType: (data['userType'] == 'direktur')
+          ? UserType.direktur
+          : (data['userType'] == 'sekretaris')
+          ? UserType.sekretaris
+          : (data['userType'] == 'bendahara')
+          ? UserType.bendahara
+          : (data['userType'] == 'edukasi')
+          ? UserType.edukasi
+          : UserType.nasabah,
+      validated: data['validated'] ?? false,
       balance: (data['balance'] as num?)?.toDouble() ?? 0.0, // Ambil saldo
     );
   }
@@ -35,9 +44,38 @@ class AppUser {
       'email': email,
       'nama': nama,
       'nik': nik,
-      'userType': userType == UserType.nasabah ? 'nasabah' : 'pengepul',
+      'userType': userType == UserType.direktur
+          ? 'direktur'
+          : userType == UserType.sekretaris
+          ? 'sekretaris'
+          : userType == UserType.bendahara
+          ? 'bendahara'
+          : userType == UserType.edukasi
+          ? 'edukasi'
+          : 'nasabah',
+      'validated': validated,
       'balance': balance, // Simpan saldo
     };
+  }
+
+  AppUser copyWith({
+    String? id,
+    String? email,
+    String? nama,
+    String? nik,
+    UserType? userType,
+    double? balance,
+    bool? validated,
+  }) {
+    return AppUser(
+      id: id ?? this.id,
+      email: email ?? this.email,
+      nama: nama ?? this.nama,
+      nik: nik ?? this.nik,
+      userType: userType ?? this.userType,
+      balance: balance ?? this.balance,
+      validated: validated ?? this.validated,
+    );
   }
 
   @override
