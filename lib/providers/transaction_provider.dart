@@ -10,12 +10,9 @@ class TransactionProvider with ChangeNotifier {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   List<Transaction> _nasabahTransactions = [];
-  List<Transaction> _pendingPengepulValidations =
-      []; // Setoran yang menunggu divalidasi
-  List<WithdrawalRequest> _pendingWithdrawalRequests =
-      []; // Permintaan pencairan yang menunggu
-  double _nasabahBalance =
-      0.0; // Ini akan dibaca dari AuthProvider atau langsung dari user doc
+  List<Transaction> _pendingPengepulValidations = [];
+  List<WithdrawalRequest> _pendingWithdrawalRequests = [];
+  double _nasabahBalance = 0.0;
   bool _isLoading = false;
   String? _errorMessage;
 
@@ -23,20 +20,17 @@ class TransactionProvider with ChangeNotifier {
   List<Transaction> get pendingPengepulValidations =>
       _pendingPengepulValidations;
   List<WithdrawalRequest> get pendingWithdrawalRequests =>
-      _pendingWithdrawalRequests; // Getter baru
-  double get nasabahBalance => _nasabahBalance; // Getter untuk saldo nasabah
+      _pendingWithdrawalRequests;
+  double get nasabahBalance => _nasabahBalance;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
 
-  // Stream subscriptions
   StreamSubscription? _nasabahTransactionSubscription;
   StreamSubscription? _pendingPengepulValidationSubscription;
   StreamSubscription? _pendingWithdrawalRequestSubscription;
   StreamSubscription? _nasabahBalanceSubscription;
 
-  TransactionProvider() {
-    // Listener akan diinisialisasi ketika fungsi listenTo... dipanggil
-  }
+  TransactionProvider();
 
   @override
   void dispose() {
@@ -49,7 +43,6 @@ class TransactionProvider with ChangeNotifier {
 
   // Stream untuk mendengarkan perubahan transaksi nasabah dan saldo
   void listenToNasabahData(String userId) {
-    // Listener untuk transaksi nasabah
     _nasabahTransactionSubscription?.cancel();
     _nasabahTransactionSubscription = _firestore
         .collection('transactions')
@@ -69,7 +62,6 @@ class TransactionProvider with ChangeNotifier {
           },
         );
 
-    // Listener untuk saldo nasabah (langsung dari dokumen user)
     _nasabahBalanceSubscription?.cancel();
     _nasabahBalanceSubscription = _firestore
         .collection('users')
@@ -81,7 +73,7 @@ class TransactionProvider with ChangeNotifier {
               _nasabahBalance =
                   (snapshot.data()?['balance'] as num?)?.toDouble() ?? 0.0;
             } else {
-              _nasabahBalance = 0.0; // Jika dokumen user tidak ada, saldo 0
+              _nasabahBalance = 0.0;
             }
             notifyListeners();
           },
@@ -116,13 +108,11 @@ class TransactionProvider with ChangeNotifier {
         );
   }
 
-  // --- Stream Baru: Untuk mendengarkan permintaan pencairan yang pending ---
+  // Stream untuk mendengarkan permintaan pencairan yang pending (untuk semua pengepul)
   void listenToPendingWithdrawalRequests() {
     _pendingWithdrawalRequestSubscription?.cancel();
     _pendingWithdrawalRequestSubscription = _firestore
-        .collection(
-          'withdrawal_requests',
-        ) // Koleksi baru untuk permintaan pencairan
+        .collection('withdrawal_requests')
         .where('status', isEqualTo: 'pending')
         .orderBy('timestamp', descending: true)
         .snapshots()
@@ -157,15 +147,15 @@ class TransactionProvider with ChangeNotifier {
           .collection('transactions')
           .add(
             Transaction(
-              id: '', // ID akan di-generate Firestore
+              id: '',
               userId: userId,
               type: TransactionType.setoran,
               sampahTypeId: sampahType.id,
               sampahTypeName: sampahType.name,
               weightKg: estimatedWeightKg,
-              amount: 0.0, // Amount awal 0, akan diisi oleh pengepul
+              amount: 0.0,
               timestamp: DateTime.now(),
-              status: TransactionStatus.pending, // Status menunggu validasi
+              status: TransactionStatus.pending,
             ).toFirestore(),
           );
       _errorMessage = null;
@@ -179,10 +169,9 @@ class TransactionProvider with ChangeNotifier {
     }
   }
 
-  // --- Metode requestPencairan yang diperbarui (Nasabah) ---
   Future<void> requestPencairan({
     required String userId,
-    required String userName, // Tambahkan userName
+    required String userName,
     required double amount,
   }) async {
     _isLoading = true;
@@ -197,7 +186,6 @@ class TransactionProvider with ChangeNotifier {
     }
 
     try {
-      // Periksa saldo aktual nasabah dari Firestore (lebih aman)
       final userDoc = await _firestore.collection('users').doc(userId).get();
       final currentBalance =
           (userDoc.data()?['balance'] as num?)?.toDouble() ?? 0.0;
@@ -210,20 +198,18 @@ class TransactionProvider with ChangeNotifier {
         return;
       }
 
-      // Buat permintaan pencairan baru di koleksi 'withdrawal_requests'
-      // ID permintaan pencairan juga bisa digunakan sebagai referensi untuk transaksi pencairan
       final withdrawalRequestId = _firestore
           .collection('withdrawal_requests')
           .doc()
           .id;
 
       final newRequest = WithdrawalRequest(
-        id: withdrawalRequestId, // Gunakan ID yang di-generate
+        id: withdrawalRequestId,
         userId: userId,
         userName: userName,
         amount: amount,
         timestamp: DateTime.now(),
-        status: 'pending', // Status menunggu validasi pengepul
+        status: 'pending',
       );
 
       await _firestore
@@ -231,22 +217,20 @@ class TransactionProvider with ChangeNotifier {
           .doc(newRequest.id)
           .set(newRequest.toFirestore());
 
-      // Juga buat entri transaksi dengan status "pending" di koleksi 'transactions'
-      // Ini penting agar nasabah bisa melihat status "pending" di riwayat mereka
       await _firestore
           .collection('transactions')
           .doc(withdrawalRequestId)
           .set(
             Transaction(
-              id: withdrawalRequestId, // Menggunakan ID yang sama dengan request
+              id: withdrawalRequestId,
               userId: userId,
               type: TransactionType.pencairan,
-              sampahTypeId: '', // Tidak relevan untuk pencairan
-              sampahTypeName: 'Permintaan Pencairan Dana', // Nama deskriptif
-              weightKg: 0.0, // Tidak relevan
+              sampahTypeId: '',
+              sampahTypeName: 'Permintaan Pencairan Dana',
+              weightKg: 0.0,
               amount: amount,
               timestamp: DateTime.now(),
-              status: TransactionStatus.pending, // Status awal adalah pending
+              status: TransactionStatus.pending,
             ).toFirestore(),
           );
       _errorMessage = null;
@@ -260,12 +244,13 @@ class TransactionProvider with ChangeNotifier {
     }
   }
 
+  // MARK: - Fungsi Pengepul
   Future<void> validateSetoran({
     required String transactionId,
     required String pengepulId,
     required double actualWeightKg,
     required SampahType sampahType,
-    required String userId, // Perlu userId nasabah untuk update saldo
+    required String userId,
   }) async {
     _isLoading = true;
     _errorMessage = null;
@@ -297,16 +282,14 @@ class TransactionProvider with ChangeNotifier {
         final currentBalance =
             (userDoc.data()?['balance'] as num?)?.toDouble() ?? 0.0;
 
-        // 1. Update transaksi setoran
         transaction.update(transactionRef, {
           'weightKg': actualWeightKg,
           'amount': earnedAmount,
-          'status': 'completed', // Pastikan menggunakan string 'completed'
+          'status': 'completed',
           'pengepulId': pengepulId,
           'timestamp': FieldValue.serverTimestamp(),
         });
 
-        // 2. Update saldo nasabah
         transaction.update(userRef, {'balance': currentBalance + earnedAmount});
       });
 
@@ -321,6 +304,7 @@ class TransactionProvider with ChangeNotifier {
     }
   }
 
+  // Fungsi pencairan yang Divalidasi oleh Pengepul
   Future<void> processWithdrawalRequest(
     WithdrawalRequest request,
     String pengepulId,
@@ -335,7 +319,7 @@ class TransactionProvider with ChangeNotifier {
         final withdrawalRequestDocRef = _firestore
             .collection('withdrawal_requests')
             .doc(request.id);
-        // Ambil juga referensi ke transaksi di koleksi 'transactions' yang terkait
+
         final relatedTransactionRef = _firestore
             .collection('transactions')
             .doc(request.id);
@@ -349,15 +333,12 @@ class TransactionProvider with ChangeNotifier {
         );
 
         if (!userSnapshot.exists) {
-          throw Exception('User not found!');
+          throw Exception('User tidak ditemukan!');
         }
         if (!withdrawalRequestSnapshot.exists) {
           throw Exception('Permintaan pencairan tidak ditemukan!');
         }
         if (!relatedTransactionSnapshot.exists) {
-          // Ini bisa terjadi jika nasabah mengajukan pencairan tapi entri di 'transactions' belum terbuat karena suatu error.
-          // Namun, dengan kode requestPencairan yang diperbarui, ini seharusnya tidak terjadi.
-          // Kita bisa memilih untuk melemparkan error atau membuatnya. Untuk saat ini, kita anggap itu harus ada.
           throw Exception('Transaksi terkait tidak ditemukan di riwayat!');
         }
 
@@ -376,38 +357,31 @@ class TransactionProvider with ChangeNotifier {
               'Saldo nasabah tidak mencukupi untuk pencairan ini.',
             );
           }
-          // Kurangi saldo nasabah
           transaction.update(userDocRef, {
             'balance': currentBalance - request.amount,
           });
-          // Update status permintaan pencairan
           transaction.update(withdrawalRequestDocRef, {
             'status': 'completed',
             'validatedByPengepulId': pengepulId,
             'validationTimestamp': FieldValue.serverTimestamp(),
           });
 
-          // Update status transaksi di koleksi 'transactions' menjadi completed
           transaction.update(relatedTransactionRef, {
             'status': 'completed',
             'pengepulId': pengepulId,
-            'timestamp':
-                FieldValue.serverTimestamp(), // Update timestamp untuk waktu penyelesaian
+            'timestamp': FieldValue.serverTimestamp(),
           });
         } else {
-          // Jika ditolak, hanya update status permintaan
           transaction.update(withdrawalRequestDocRef, {
             'status': 'rejected',
             'validatedByPengepulId': pengepulId,
             'validationTimestamp': FieldValue.serverTimestamp(),
           });
 
-          // Update status transaksi di koleksi 'transactions' menjadi rejected
           transaction.update(relatedTransactionRef, {
             'status': 'rejected',
-            'pengepulId': pengepulId, // Tetap simpan pengepul yang menolak
-            'timestamp':
-                FieldValue.serverTimestamp(), // Update timestamp untuk waktu penolakan
+            'pengepulId': pengepulId,
+            'timestamp': FieldValue.serverTimestamp(),
           });
         }
       });

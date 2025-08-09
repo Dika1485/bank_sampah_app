@@ -5,12 +5,12 @@ import 'package:bank_sampah_app/providers/auth_provider.dart';
 import 'package:bank_sampah_app/providers/transaction_provider.dart';
 import 'package:bank_sampah_app/screens/nasabah/buku_tabungan_screen.dart';
 import 'package:bank_sampah_app/screens/nasabah/setor_sampah_screen.dart';
-import 'package:bank_sampah_app/screens/nasabah/nasabah_chart_widget.dart'; // Widget chart
+import 'package:bank_sampah_app/screens/nasabah/nasabah_chart_widget.dart';
 import 'package:bank_sampah_app/screens/common/profile_screen.dart';
-import 'package:bank_sampah_app/screens/auth/login_screen.dart'; // Untuk logout
+import 'package:bank_sampah_app/screens/auth/login_screen.dart';
 import 'package:bank_sampah_app/widgets/loading_indicator.dart';
-import 'package:intl/intl.dart'; // For currency formatting
-import 'package:bank_sampah_app/models/user.dart'; // Import AppUser
+import 'package:intl/intl.dart';
+import 'package:bank_sampah_app/models/user.dart';
 
 class NasabahDashboardScreen extends StatefulWidget {
   const NasabahDashboardScreen({super.key});
@@ -20,9 +20,6 @@ class NasabahDashboardScreen extends StatefulWidget {
 }
 
 class _NasabahDashboardScreenState extends State<NasabahDashboardScreen> {
-  // HAPUS _isWithdrawalLoading: State loading akan dikelola oleh TransactionProvider
-  // bool _isWithdrawalLoading = false;
-
   @override
   void initState() {
     super.initState();
@@ -48,7 +45,7 @@ class _NasabahDashboardScreenState extends State<NasabahDashboardScreen> {
           MaterialPageRoute(builder: (context) => const LoginScreen()),
         );
       });
-      return const LoadingIndicator(); // Tampilkan loading saat redirect
+      return const LoadingIndicator();
     }
 
     final String nasabahName = authProvider.appUser?.nama ?? 'Nasabah';
@@ -75,7 +72,7 @@ class _NasabahDashboardScreenState extends State<NasabahDashboardScreen> {
       body:
           transactionProvider.isLoading &&
               transactionProvider.errorMessage == null
-          ? const LoadingIndicator() // Tampilkan loading jika ada operasi global di provider dan tidak ada error
+          ? const LoadingIndicator()
           : SingleChildScrollView(
               padding: const EdgeInsets.all(16.0),
               child: Column(
@@ -143,7 +140,6 @@ class _NasabahDashboardScreenState extends State<NasabahDashboardScreen> {
                               Expanded(
                                 child: ElevatedButton.icon(
                                   onPressed: () {
-                                    // Pastikan appUser tidak null sebelum memanggil dialog
                                     if (authProvider.appUser != null) {
                                       _showWithdrawalDialog(
                                         context,
@@ -316,33 +312,20 @@ class _NasabahDashboardScreenState extends State<NasabahDashboardScreen> {
     );
   }
 
-  // --- Fungsi _showWithdrawalDialog yang direvisi ---
+  // --- Fungsi _showWithdrawalDialog yang telah dimodifikasi ---
   void _showWithdrawalDialog(
     BuildContext context,
     String userId,
     String userName,
   ) {
     final TextEditingController amountController = TextEditingController();
-    // selectedPengepul dideklarasikan di sini agar state-nya dikelola oleh StatefulBuilder
-    AppUser? selectedPengepul;
 
     showDialog(
       context: context,
-      barrierDismissible:
-          false, // Tidak bisa ditutup dengan tap di luar saat proses
+      barrierDismissible: false,
       builder: (BuildContext dialogContext) {
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            // Kita mendapatkan provider di dalam StatefulBuilder/Consumer
-            // Agar dialog bisa bereaksi terhadap perubahan isLoading dari provider
-            final authProvider = Provider.of<AuthProvider>(
-              context,
-              listen: false,
-            );
-            final transactionProvider = Provider.of<TransactionProvider>(
-              context,
-            ); // listen: true agar rebuild
-
+        return Consumer<TransactionProvider>(
+          builder: (context, transactionProvider, child) {
             return AlertDialog(
               title: const Text('Cairkan Dana'),
               content: SingleChildScrollView(
@@ -362,57 +345,6 @@ class _NasabahDashboardScreenState extends State<NasabahDashboardScreen> {
                       'Saldo Tersedia: ${NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0).format(transactionProvider.nasabahBalance)}',
                       style: const TextStyle(fontSize: 12, color: Colors.grey),
                     ),
-                    const SizedBox(height: 10),
-                    FutureBuilder<List<AppUser>>(
-                      future: authProvider.fetchPengepulUsers(),
-                      builder: (context, snapshot) {
-                        if (snapshot.connectionState ==
-                            ConnectionState.waiting) {
-                          return const Center(
-                            child: CircularProgressIndicator(),
-                          );
-                        }
-                        if (snapshot.hasError) {
-                          return Text(
-                            'Error memuat pengepul: ${snapshot.error}',
-                          );
-                        }
-                        if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                          return const Text('Tidak ada pengepul tersedia.');
-                        }
-
-                        List<AppUser> pengepulList = snapshot.data!;
-                        // Inisialisasi selectedPengepul jika belum ada
-                        if (selectedPengepul == null &&
-                            pengepulList.isNotEmpty) {
-                          WidgetsBinding.instance.addPostFrameCallback((_) {
-                            setDialogState(() {
-                              selectedPengepul = pengepulList.first;
-                            });
-                          });
-                        }
-
-                        return DropdownButtonFormField<AppUser>(
-                          value: selectedPengepul,
-                          decoration: const InputDecoration(
-                            labelText: 'Pilih Pengepul',
-                            border: OutlineInputBorder(),
-                          ),
-                          items: pengepulList.map((pengepul) {
-                            return DropdownMenuItem(
-                              value: pengepul,
-                              child: Text(pengepul.nama),
-                            );
-                          }).toList(),
-                          onChanged: (AppUser? newValue) {
-                            setDialogState(() {
-                              // Gunakan setDialogState untuk memperbarui UI dialog
-                              selectedPengepul = newValue;
-                            });
-                          },
-                        );
-                      },
-                    ),
                   ],
                 ),
               ),
@@ -424,9 +356,7 @@ class _NasabahDashboardScreenState extends State<NasabahDashboardScreen> {
                   },
                 ),
                 ElevatedButton(
-                  // Tombol dinonaktifkan jika transactionProvider.isLoading atau belum ada pengepul terpilih
-                  onPressed:
-                      transactionProvider.isLoading || selectedPengepul == null
+                  onPressed: transactionProvider.isLoading
                       ? null
                       : () async {
                           final double? amount = double.tryParse(
@@ -437,6 +367,7 @@ class _NasabahDashboardScreenState extends State<NasabahDashboardScreen> {
                             ScaffoldMessenger.of(dialogContext).showSnackBar(
                               const SnackBar(
                                 content: Text('Masukkan jumlah yang valid.'),
+                                backgroundColor: Colors.red,
                               ),
                             );
                             return;
@@ -455,14 +386,12 @@ class _NasabahDashboardScreenState extends State<NasabahDashboardScreen> {
                           }
 
                           try {
-                            // Panggil requestPencairan. Provider akan mengelola status loading dan error-nya.
                             await transactionProvider.requestPencairan(
                               userId: userId,
                               userName: userName,
                               amount: amount,
                             );
 
-                            // Periksa errorMessage dari provider setelah operasi selesai
                             if (transactionProvider.errorMessage != null) {
                               ScaffoldMessenger.of(dialogContext).showSnackBar(
                                 SnackBar(
@@ -473,10 +402,8 @@ class _NasabahDashboardScreenState extends State<NasabahDashboardScreen> {
                                 ),
                               );
                             } else {
-                              // Jika berhasil, tutup dialog dan tampilkan snackbar sukses di parent context
                               Navigator.of(dialogContext).pop();
                               ScaffoldMessenger.of(context).showSnackBar(
-                                // Gunakan context dari widget utama
                                 const SnackBar(
                                   content: Text(
                                     'Permintaan pencairan berhasil diajukan!',
@@ -486,7 +413,6 @@ class _NasabahDashboardScreenState extends State<NasabahDashboardScreen> {
                               );
                             }
                           } catch (e) {
-                            // Catch-all untuk error tak terduga yang mungkin tidak ditangani provider
                             ScaffoldMessenger.of(dialogContext).showSnackBar(
                               SnackBar(
                                 content: Text(
@@ -496,9 +422,7 @@ class _NasabahDashboardScreenState extends State<NasabahDashboardScreen> {
                               ),
                             );
                           }
-                          // Block finally tidak diperlukan di sini karena transactionProvider sudah mengelola isLoading
                         },
-                  // Tampilkan LoadingIndicator di dalam tombol jika provider sedang loading
                   child: transactionProvider.isLoading
                       ? const LoadingIndicator(color: Colors.white)
                       : const Text('Cairkan'),

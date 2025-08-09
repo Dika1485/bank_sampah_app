@@ -1,1 +1,38 @@
-{"flutter":{"platforms":{"android":{"default":{"projectId":"bank-sampah-app-ed9cb","appId":"1:923626442750:android:58c1bd9f6cd6765ddabaaf","fileOutput":"android/app/google-services.json"}},"dart":{"lib/firebase_options.dart":{"projectId":"bank-sampah-app-ed9cb","configurations":{"android":"1:923626442750:android:58c1bd9f6cd6765ddabaaf","ios":"1:923626442750:ios:beb0510e6531ba3edabaaf","macos":"1:923626442750:ios:beb0510e6531ba3edabaaf","web":"1:923626442750:web:e0897206de5969fedabaaf","windows":"1:923626442750:web:18156a67976e5610dabaaf"}}}}}}
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "bank-sampah-app-ed9cb",
+          "appId": "1:923626442750:android:58c1bd9f6cd6765ddabaaf",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "bank-sampah-app-ed9cb",
+          "configurations": {
+            "android": "1:923626442750:android:58c1bd9f6cd6765ddabaaf",
+            "ios": "1:923626442750:ios:beb0510e6531ba3edabaaf",
+            "macos": "1:923626442750:ios:beb0510e6531ba3edabaaf",
+            "web": "1:923626442750:web:e0897206de5969fedabaaf",
+            "windows": "1:923626442750:web:18156a67976e5610dabaaf"
+          }
+        }
+      }
+    }
+  },
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "default",
+      "ignore": [
+        "node_modules",
+        ".git",
+        "firebase-debug.log",
+        "firebase-debug.*.log",
+        "*.local"
+      ]
+    }
+  ]
+}
