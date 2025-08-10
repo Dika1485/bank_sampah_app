@@ -1,12 +1,11 @@
-import 'package:fl_chart/fl_chart.dart'; // Ini yang sangat penting
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:bank_sampah_app/models/transaction.dart';
-import 'package:intl/intl.dart';
 
-class PengepulChartWidget extends StatelessWidget {
+class PengepulBarChartWidget extends StatelessWidget {
   final List<Transaction> transactions;
 
-  const PengepulChartWidget({super.key, required this.transactions});
+  const PengepulBarChartWidget({super.key, required this.transactions});
 
   @override
   Widget build(BuildContext context) {
@@ -19,34 +18,26 @@ class PengepulChartWidget extends StatelessWidget {
         .toList();
 
     if (completedSetoran.isEmpty) {
-      return const SizedBox.shrink();
+      return const SizedBox.shrink(); // Widget kosong jika tidak ada data
     }
 
-    Map<String, double> monthlyWeightData = {};
+    Map<String, double> wasteWeightData = {};
     for (var transaction in completedSetoran) {
-      final monthKey = DateFormat('yyyy-MM').format(transaction.timestamp);
-      monthlyWeightData.update(
-        monthKey,
+      wasteWeightData.update(
+        transaction.sampahTypeName,
         (value) => value + transaction.weightKg,
         ifAbsent: () => transaction.weightKg,
       );
     }
 
-    final sortedMonthKeys = monthlyWeightData.keys.toList()..sort();
-
-    List<FlSpot> spots = [];
+    final sortedWasteTypes = wasteWeightData.keys.toList()..sort();
     double maxY = 0;
-    for (int i = 0; i < sortedMonthKeys.length; i++) {
-      final month = sortedMonthKeys[i];
-      final weight = monthlyWeightData[month] ?? 0.0;
-      spots.add(FlSpot(i.toDouble(), weight));
+    for (var weight in wasteWeightData.values) {
       if (weight > maxY) {
         maxY = weight;
       }
     }
-
     maxY = maxY * 1.1;
-    if (maxY == 0) maxY = 1;
 
     return AspectRatio(
       aspectRatio: 1.5,
@@ -60,7 +51,7 @@ class PengepulChartWidget extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
               const Text(
-                'Total Berat Sampah Diterima (kg) per Bulan',
+                'Berat Sampah per Jenis (kg)',
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 18,
@@ -70,31 +61,49 @@ class PengepulChartWidget extends StatelessWidget {
               ),
               const SizedBox(height: 20),
               Expanded(
-                child: LineChart(
-                  LineChartData(
-                    gridData: FlGridData(show: false),
+                child: BarChart(
+                  BarChartData(
+                    alignment: BarChartAlignment.spaceAround,
+                    maxY: maxY,
+                    barGroups: sortedWasteTypes.asMap().entries.map((entry) {
+                      final index = entry.key;
+                      final type = entry.value;
+                      final weight = wasteWeightData[type] ?? 0.0;
+                      return BarChartGroupData(
+                        x: index,
+                        barRods: [
+                          BarChartRodData(
+                            toY: weight,
+                            color: Colors.blueAccent,
+                            width: 15,
+                            borderRadius: BorderRadius.circular(5),
+                          ),
+                        ],
+                      );
+                    }).toList(),
                     titlesData: FlTitlesData(
+                      show: true,
                       bottomTitles: AxisTitles(
                         sideTitles: SideTitles(
                           showTitles: true,
-                          reservedSize: 30,
-                          interval: 1,
                           getTitlesWidget: (value, meta) {
-                            if (value.toInt() < sortedMonthKeys.length) {
-                              final month = sortedMonthKeys[value.toInt()];
+                            final index = value.toInt();
+                            if (index >= 0 && index < sortedWasteTypes.length) {
                               return Padding(
                                 padding: const EdgeInsets.only(top: 8.0),
                                 child: Text(
-                                  month.substring(5),
+                                  sortedWasteTypes[index],
                                   style: const TextStyle(
                                     color: Colors.white,
                                     fontSize: 10,
                                   ),
+                                  textAlign: TextAlign.center,
                                 ),
                               );
                             }
                             return const Text('');
                           },
+                          reservedSize: 40,
                         ),
                       ),
                       leftTitles: AxisTitles(
@@ -116,46 +125,26 @@ class PengepulChartWidget extends StatelessWidget {
                           interval: (maxY / 4).ceilToDouble(),
                         ),
                       ),
-                      rightTitles: const AxisTitles(
-                        sideTitles: SideTitles(showTitles: false),
-                      ),
                       topTitles: const AxisTitles(
                         sideTitles: SideTitles(showTitles: false),
                       ),
+                      rightTitles: const AxisTitles(
+                        sideTitles: SideTitles(showTitles: false),
+                      ),
                     ),
-                    borderData: FlBorderData(
+                    gridData: FlGridData(
                       show: true,
-                      border: Border.all(
-                        color: const Color(0xff37434d),
-                        width: 1,
-                      ),
+                      drawHorizontalLine: true,
+                      drawVerticalLine: false,
+                      getDrawingHorizontalLine: (value) {
+                        return const FlLine(
+                          color: Colors.grey,
+                          strokeWidth: 0.5,
+                          dashArray: [5, 5],
+                        );
+                      },
                     ),
-                    minX: 0,
-                    maxX: (sortedMonthKeys.length - 1).toDouble(),
-                    minY: 0,
-                    maxY: maxY,
-                    lineBarsData: [
-                      LineChartBarData(
-                        spots: spots,
-                        isCurved: true,
-                        gradient: const LinearGradient(
-                          colors: [Colors.blueAccent, Colors.purpleAccent],
-                          begin: Alignment.centerLeft,
-                          end: Alignment.centerRight,
-                        ),
-                        barWidth: 3,
-                        isStrokeCapRound: true,
-                        dotData: FlDotData(show: true),
-                        belowBarData: BarAreaData(
-                          show: true,
-                          gradient: const LinearGradient(
-                            colors: [Colors.blueAccent, Colors.purpleAccent],
-                            begin: Alignment.centerLeft,
-                            end: Alignment.centerRight,
-                          ).withOpacity(0.3),
-                        ),
-                      ),
-                    ],
+                    borderData: FlBorderData(show: false),
                   ),
                 ),
               ),

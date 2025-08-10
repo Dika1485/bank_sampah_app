@@ -1,3 +1,6 @@
+import 'package:bank_sampah_app/providers/bank_balance_provider.dart';
+import 'package:bank_sampah_app/providers/events_provider.dart';
+import 'package:bank_sampah_app/providers/products_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
@@ -23,6 +26,9 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => TransactionProvider()),
         ChangeNotifierProvider(create: (_) => SampahPriceProvider()),
+        ChangeNotifierProvider(create: (_) => EventsProvider()),
+        ChangeNotifierProvider(create: (_) => ProductsProvider()),
+        ChangeNotifierProvider(create: (_) => BankBalanceProvider()),
       ],
       child: MaterialApp(
         title: 'Bank Sampah App',

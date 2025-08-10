@@ -1,7 +1,8 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:bank_sampah_app/models/sampah.dart';
-import 'dart:async'; // Import untuk StreamSubscription
+import 'package:bank_sampah_app/models/product.dart'; // Import jika ada model produk
 
 class SampahPriceProvider with ChangeNotifier {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -10,15 +11,26 @@ class SampahPriceProvider with ChangeNotifier {
   bool _isLoading = false;
   String? _errorMessage;
 
+  StreamSubscription? _sampahTypesSubscription;
+
   List<SampahType> get sampahTypes => _sampahTypes;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
 
-  StreamSubscription? _sampahTypesSubscription;
-
   SampahPriceProvider() {
     _listenToSampahTypes();
   }
+
+  // Hapus semua kode terkait stok sampah dari provider ini.
+  // Stok sampah sekarang menjadi tanggung jawab TransactionProvider.
+  // Hapus properti:
+  // Map<String, double> _currentStock = {};
+  // StreamSubscription? _wasteStockSubscription;
+  // Hapus getter:
+  // Map<String, double> get currentStock => _currentStock;
+  // Hapus fungsi:
+  // void _listenToWasteStock() { ... }
+  // Future<void> reduceWasteStock(Map<String, double> soldWaste) async { ... }
 
   void _listenToSampahTypes() {
     _isLoading = true;
@@ -48,16 +60,16 @@ class SampahPriceProvider with ChangeNotifier {
         );
   }
 
+  // Fungsi untuk mendapatkan data jenis sampah berdasarkan ID
   SampahType? getSampahTypeById(String id) {
     try {
       return _sampahTypes.firstWhere((type) => type.id == id);
     } catch (e) {
-      // Jika tidak ditemukan, firstWhere akan melempar StateError.
       return null;
     }
   }
-  // ----------------------------------------------------------------
 
+  // Fungsi untuk menambah jenis sampah baru (tidak ada perubahan)
   Future<void> addSampahType({
     required String name,
     required SampahCategory category,
@@ -95,6 +107,7 @@ class SampahPriceProvider with ChangeNotifier {
     }
   }
 
+  // Fungsi untuk mengubah harga sampah (tidak ada perubahan)
   Future<void> updateSampahPrice(String id, double newPrice) async {
     _isLoading = true;
     _errorMessage = null;
@@ -115,20 +128,21 @@ class SampahPriceProvider with ChangeNotifier {
     }
   }
 
+  // Fungsi untuk menghapus jenis sampah (tidak ada perubahan)
   Future<void> deleteSampahType(String id) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
     try {
       await _firestore.collection('sampah_types').doc(id).delete();
-      _errorMessage = null; // Clear any previous error message on success
+      _errorMessage = null;
     } on FirebaseException catch (e) {
       _errorMessage = 'Gagal menghapus jenis sampah: ${e.message}';
     } catch (e) {
       _errorMessage = 'Terjadi kesalahan: $e';
     } finally {
       _isLoading = false;
-      notifyListeners(); // Notify listeners even on error to update UI state
+      notifyListeners();
     }
   }
 

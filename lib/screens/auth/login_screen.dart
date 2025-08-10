@@ -1,7 +1,9 @@
 import 'package:bank_sampah_app/models/user.dart';
 import 'package:bank_sampah_app/screens/admin/admin_dashboard_screen.dart';
 import 'package:bank_sampah_app/screens/admin/user_validation_screen.dart';
+import 'package:bank_sampah_app/screens/auth/register_screen.dart';
 import 'package:bank_sampah_app/screens/common/profile_screen.dart';
+import 'package:bank_sampah_app/screens/edukasi/edukasi_dashboard_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:bank_sampah_app/providers/auth_provider.dart';
@@ -62,6 +64,10 @@ class _LoginScreenState extends State<LoginScreen> {
         } else if (authProvider.appUser!.userType == UserType.bendahara) {
           Navigator.of(context).pushReplacement(
             MaterialPageRoute(builder: (_) => const PengepulDashboardScreen()),
+          );
+        } else if (authProvider.appUser!.userType == UserType.edukasi) {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (_) => const EdukasiDashboardScreen()),
           );
         }
       }
@@ -137,7 +143,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   onPressed: () {
                     // TODO: Navigasi ke halaman registrasi
                     Navigator.of(context).pushReplacement(
-                      MaterialPageRoute(builder: (_) => const LoginScreen()),
+                      MaterialPageRoute(builder: (_) => const RegisterScreen()),
                     );
                     print('Go to Register Page');
                   },
