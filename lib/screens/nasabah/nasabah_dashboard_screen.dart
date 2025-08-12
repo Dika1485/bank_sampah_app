@@ -11,6 +11,12 @@ import 'package:bank_sampah_app/screens/auth/login_screen.dart';
 import 'package:bank_sampah_app/widgets/loading_indicator.dart';
 import 'package:intl/intl.dart';
 import 'package:bank_sampah_app/models/user.dart';
+import 'package:bank_sampah_app/providers/products_provider.dart';
+import 'package:bank_sampah_app/providers/events_provider.dart';
+import 'package:bank_sampah_app/widgets/product_card.dart'; // File baru
+import 'package:bank_sampah_app/widgets/event_card.dart'; // File baru
+import 'package:bank_sampah_app/screens/nasabah/all_products_screen.dart'; // Halaman baru
+import 'package:bank_sampah_app/screens/nasabah/all_events_screen.dart'; // Halaman baru
 
 class NasabahDashboardScreen extends StatefulWidget {
   const NasabahDashboardScreen({super.key});
@@ -23,21 +29,34 @@ class _NasabahDashboardScreenState extends State<NasabahDashboardScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      if (authProvider.appUser != null) {
-        Provider.of<TransactionProvider>(
-          context,
-          listen: false,
-        ).listenToNasabahData(authProvider.appUser!.id);
-      }
-    });
+    _fetchInitialData();
+  }
+
+  void _fetchInitialData() {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final transactionProvider = Provider.of<TransactionProvider>(
+      context,
+      listen: false,
+    );
+    final productProvider = Provider.of<ProductsProvider>(
+      context,
+      listen: false,
+    );
+    final eventProvider = Provider.of<EventsProvider>(context, listen: false);
+
+    if (authProvider.appUser != null) {
+      transactionProvider.listenToNasabahData(authProvider.appUser!.id);
+      productProvider.listenToProducts();
+      eventProvider.listenToEvents();
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
     final transactionProvider = Provider.of<TransactionProvider>(context);
+    final productProvider = Provider.of<ProductsProvider>(context);
+    final eventProvider = Provider.of<EventsProvider>(context);
 
     if (authProvider.appUser == null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -69,217 +88,272 @@ class _NasabahDashboardScreenState extends State<NasabahDashboardScreen> {
           ),
         ],
       ),
-      body:
-          transactionProvider.isLoading &&
-              transactionProvider.errorMessage == null
-          ? const LoadingIndicator()
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Selamat Datang, $nasabahName!',
-                    style: const TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                    ),
+      body: Builder(
+        builder: (context) {
+          if (transactionProvider.isLoading &&
+              transactionProvider.errorMessage == null) {
+            return const Center(child: LoadingIndicator());
+          }
+          if (transactionProvider.errorMessage != null) {
+            return Center(
+              child: Text(
+                'Terjadi kesalahan: ${transactionProvider.errorMessage}',
+                textAlign: TextAlign.center,
+              ),
+            );
+          }
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Selamat Datang, $nasabahName!',
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
                   ),
-                  const SizedBox(height: 20),
-                  Card(
-                    elevation: 4,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(20.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Saldo Buku Tabungan:',
-                            style: TextStyle(fontSize: 18, color: Colors.grey),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            formattedBalance,
-                            style: const TextStyle(
-                              fontSize: 36,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.green,
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                            children: [
-                              Expanded(
-                                child: ElevatedButton.icon(
-                                  onPressed: () {
-                                    Navigator.of(context).push(
-                                      MaterialPageRoute(
-                                        builder: (context) =>
-                                            const SetorSampahScreen(),
-                                      ),
-                                    );
-                                  },
-                                  icon: const Icon(Icons.add),
-                                  label: const Text('Setor Sampah'),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.green,
-                                    padding: const EdgeInsets.symmetric(
-                                      vertical: 12,
-                                    ),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: ElevatedButton.icon(
-                                  onPressed: () {
-                                    if (authProvider.appUser != null) {
-                                      _showWithdrawalDialog(
-                                        context,
-                                        authProvider.appUser!.id,
-                                        authProvider.appUser!.nama,
-                                      );
-                                    } else {
-                                      ScaffoldMessenger.of(
-                                        context,
-                                      ).showSnackBar(
-                                        const SnackBar(
-                                          content: Text(
-                                            'Anda harus login untuk mencairkan dana.',
-                                          ),
-                                          backgroundColor: Colors.red,
-                                        ),
-                                      );
-                                    }
-                                  },
-                                  icon: const Icon(Icons.money),
-                                  label: const Text('Cairkan Dana'),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.blueAccent,
-                                    padding: const EdgeInsets.symmetric(
-                                      vertical: 12,
-                                    ),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
+                ),
+                const SizedBox(height: 20),
+                Card(
+                  elevation: 4,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
                   ),
-                  const SizedBox(height: 20),
-                  const Text(
-                    'Analisis Setoran Sampah:',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 10),
-                  if (transactionProvider.nasabahTransactions.isNotEmpty)
-                    NasabahChartWidget(
-                      transactions: transactionProvider.nasabahTransactions,
-                    )
-                  else
-                    const Card(
-                      elevation: 2,
-                      child: Padding(
-                        padding: EdgeInsets.all(16.0),
-                        child: Center(
-                          child: Text('Belum ada data setoran untuk grafik.'),
+                  child: Padding(
+                    padding: const EdgeInsets.all(20.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Saldo Buku Tabungan:',
+                          style: TextStyle(fontSize: 16, color: Colors.grey),
                         ),
-                      ),
-                    ),
-                  const SizedBox(height: 20),
-                  const Text(
-                    'Riwayat Transaksi Terbaru:',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 10),
-                  transactionProvider.nasabahTransactions.isEmpty
-                      ? const Card(
-                          elevation: 2,
-                          child: Padding(
-                            padding: EdgeInsets.all(16.0),
-                            child: Center(
-                              child: Text('Belum ada riwayat transaksi.'),
-                            ),
+                        const SizedBox(height: 8),
+                        Text(
+                          formattedBalance,
+                          style: const TextStyle(
+                            fontSize: 32,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.green,
                           ),
-                        )
+                        ),
+                        const SizedBox(height: 16),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            Expanded(
+                              child: ElevatedButton.icon(
+                                onPressed: () {
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          const SetorSampahScreen(),
+                                    ),
+                                  );
+                                },
+                                icon: const Icon(
+                                  Icons.add,
+                                  color: Colors.white,
+                                ),
+                                label: const Text(
+                                  'Setor Sampah',
+                                  style: TextStyle(color: Colors.white),
+                                ),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.green,
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 12,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: ElevatedButton.icon(
+                                onPressed: () {
+                                  if (authProvider.appUser != null) {
+                                    _showWithdrawalDialog(
+                                      context,
+                                      authProvider.appUser!.id,
+                                      authProvider.appUser!.nama,
+                                    );
+                                  }
+                                },
+                                icon: const Icon(
+                                  Icons.money,
+                                  color: Colors.white,
+                                ),
+                                label: const Text(
+                                  'Cairkan Dana',
+                                  style: TextStyle(color: Colors.white),
+                                ),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.blueAccent,
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 12,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 20),
+                _buildSectionHeader(context, 'Produk dari Bank Sampah', () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => const AllProductsScreen(),
+                    ),
+                  );
+                }),
+                const SizedBox(height: 10),
+                SizedBox(
+                  height: 200, // Ukuran tetap untuk daftar horizontal
+                  child: productProvider.isLoading
+                      ? const Center(child: LoadingIndicator())
+                      : productProvider.products.isEmpty
+                      ? const Center(child: Text('Belum ada produk saat ini.'))
                       : ListView.builder(
                           shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount:
-                              transactionProvider.nasabahTransactions.length > 5
-                              ? 5
-                              : transactionProvider.nasabahTransactions.length,
+                          scrollDirection: Axis.horizontal,
+                          itemCount: productProvider.products.length,
                           itemBuilder: (context, index) {
-                            final transaction =
-                                transactionProvider.nasabahTransactions[index];
-                            return Card(
-                              margin: const EdgeInsets.symmetric(vertical: 4),
-                              child: ListTile(
-                                leading: Icon(
-                                  transaction.type == TransactionType.setoran
-                                      ? Icons.upload_file
-                                      : Icons.download,
+                            final product = productProvider.products[index];
+                            return ProductCard(product: product);
+                          },
+                        ),
+                ),
+
+                const SizedBox(height: 20),
+                _buildSectionHeader(context, 'Acara Komunitas', () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => const AllEventsScreen(),
+                    ),
+                  );
+                }),
+                const SizedBox(height: 10),
+                SizedBox(
+                  height: 200, // Ukuran tetap untuk daftar horizontal
+                  child: eventProvider.isLoading
+                      ? const Center(child: LoadingIndicator())
+                      : eventProvider.events.isEmpty
+                      ? const Center(child: Text('Belum ada acara mendatang.'))
+                      : ListView.builder(
+                          shrinkWrap: true,
+                          scrollDirection: Axis.horizontal,
+                          itemCount: eventProvider.events.length,
+                          itemBuilder: (context, index) {
+                            final event = eventProvider.events[index];
+                            return EventCard(event: event);
+                          },
+                        ),
+                ),
+
+                const SizedBox(height: 20),
+                const Text(
+                  'Analisis Setoran Sampah:',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 10),
+                if (transactionProvider.nasabahTransactions.isNotEmpty)
+                  NasabahChartWidget(
+                    transactions: transactionProvider.nasabahTransactions,
+                  )
+                else
+                  const Card(
+                    elevation: 2,
+                    child: Padding(
+                      padding: EdgeInsets.all(16.0),
+                      child: Center(
+                        child: Text('Belum ada data setoran untuk grafik.'),
+                      ),
+                    ),
+                  ),
+
+                const SizedBox(height: 20),
+                _buildSectionHeader(context, 'Riwayat Transaksi Terbaru', () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => const BukuTabunganScreen(),
+                    ),
+                  );
+                }),
+                const SizedBox(height: 10),
+                transactionProvider.nasabahTransactions.isEmpty
+                    ? const Card(
+                        elevation: 2,
+                        child: Padding(
+                          padding: EdgeInsets.all(16.0),
+                          child: Center(
+                            child: Text('Belum ada riwayat transaksi.'),
+                          ),
+                        ),
+                      )
+                    : ListView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount:
+                            transactionProvider.nasabahTransactions.length > 5
+                            ? 5
+                            : transactionProvider.nasabahTransactions.length,
+                        itemBuilder: (context, index) {
+                          final transaction =
+                              transactionProvider.nasabahTransactions[index];
+                          return Card(
+                            margin: const EdgeInsets.symmetric(vertical: 4),
+                            child: ListTile(
+                              leading: Icon(
+                                transaction.type == TransactionType.setoran
+                                    ? Icons.upload_file
+                                    : Icons.download,
+                                color:
+                                    transaction.type == TransactionType.setoran
+                                    ? Colors.green
+                                    : Colors.red,
+                              ),
+                              title: Text(
+                                transaction.type == TransactionType.setoran
+                                    ? 'Setoran: ${transaction.sampahTypeName}'
+                                    : 'Pencairan Dana',
+                              ),
+                              subtitle: Text(
+                                '${DateFormat('dd MMM HH:mm').format(transaction.timestamp)} - ${transaction.weightKg > 0 ? '${transaction.weightKg.toStringAsFixed(2)} kg - ' : ''}Status: ${transaction.status.toString().split('.').last.toUpperCase()}',
+                              ),
+                              trailing: Text(
+                                NumberFormat.currency(
+                                  locale: 'id_ID',
+                                  symbol: 'Rp ',
+                                  decimalDigits: 0,
+                                ).format(transaction.amount),
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
                                   color:
                                       transaction.type ==
                                           TransactionType.setoran
                                       ? Colors.green
                                       : Colors.red,
                                 ),
-                                title: Text(
-                                  transaction.type == TransactionType.setoran
-                                      ? 'Setoran: ${transaction.sampahTypeName}'
-                                      : 'Pencairan Dana',
-                                ),
-                                subtitle: Text(
-                                  '${DateFormat('dd MMM HH:mm').format(transaction.timestamp)} - ${transaction.weightKg > 0 ? '${transaction.weightKg.toStringAsFixed(2)} kg - ' : ''}Status: ${transaction.status.toString().split('.').last.toUpperCase()}',
-                                ),
-                                trailing: Text(
-                                  NumberFormat.currency(
-                                    locale: 'id_ID',
-                                    symbol: 'Rp ',
-                                    decimalDigits: 0,
-                                  ).format(transaction.amount),
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color:
-                                        transaction.type ==
-                                            TransactionType.setoran
-                                        ? Colors.green
-                                        : Colors.red,
-                                  ),
-                                ),
                               ),
-                            );
-                          },
-                        ),
-                  const SizedBox(height: 10),
-                  Center(
-                    child: TextButton(
-                      onPressed: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (context) => const BukuTabunganScreen(),
-                          ),
-                        );
-                      },
-                      child: const Text('Lihat Semua Riwayat Transaksi'),
-                    ),
-                  ),
-                ],
-              ),
+                            ),
+                          );
+                        },
+                      ),
+              ],
             ),
+          );
+        },
+      ),
       bottomNavigationBar: BottomNavigationBar(
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
@@ -312,14 +386,29 @@ class _NasabahDashboardScreenState extends State<NasabahDashboardScreen> {
     );
   }
 
-  // --- Fungsi _showWithdrawalDialog yang telah dimodifikasi ---
+  Widget _buildSectionHeader(
+    BuildContext context,
+    String title,
+    VoidCallback onSeeAll,
+  ) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          title,
+          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+        ),
+        TextButton(onPressed: onSeeAll, child: const Text('Lihat Semua')),
+      ],
+    );
+  }
+
   void _showWithdrawalDialog(
     BuildContext context,
     String userId,
     String userName,
   ) {
     final TextEditingController amountController = TextEditingController();
-
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -362,7 +451,6 @@ class _NasabahDashboardScreenState extends State<NasabahDashboardScreen> {
                           final double? amount = double.tryParse(
                             amountController.text,
                           );
-
                           if (amount == null || amount <= 0) {
                             ScaffoldMessenger.of(dialogContext).showSnackBar(
                               const SnackBar(
@@ -372,7 +460,6 @@ class _NasabahDashboardScreenState extends State<NasabahDashboardScreen> {
                             );
                             return;
                           }
-
                           if (amount > transactionProvider.nasabahBalance) {
                             ScaffoldMessenger.of(dialogContext).showSnackBar(
                               SnackBar(
@@ -384,14 +471,12 @@ class _NasabahDashboardScreenState extends State<NasabahDashboardScreen> {
                             );
                             return;
                           }
-
                           try {
                             await transactionProvider.requestPencairan(
                               userId: userId,
                               userName: userName,
                               amount: amount,
                             );
-
                             if (transactionProvider.errorMessage != null) {
                               ScaffoldMessenger.of(dialogContext).showSnackBar(
                                 SnackBar(
