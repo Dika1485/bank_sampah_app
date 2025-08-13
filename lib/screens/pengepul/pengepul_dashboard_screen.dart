@@ -54,7 +54,7 @@ class _PengepulDashboardScreenState extends State<PengepulDashboardScreen> {
       return const LoadingIndicator();
     }
 
-    final String pengepulName = authProvider.appUser?.nama ?? 'Pengepul';
+    final String pengepulName = authProvider.appUser?.nama ?? 'Bendahara';
     final int pendingSetoranCount =
         transactionProvider.pendingPengepulValidations.length;
     final int pendingWithdrawalCount =
@@ -63,7 +63,7 @@ class _PengepulDashboardScreenState extends State<PengepulDashboardScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Dashboard Pengepul'),
+        title: const Text('Dashboard Bendahara'),
         actions: [
           IconButton(
             icon: const Icon(Icons.person),
@@ -96,7 +96,7 @@ class _PengepulDashboardScreenState extends State<PengepulDashboardScreen> {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    color: Colors.lightGreen,
+                    color: Colors.green,
                     child: Padding(
                       padding: const EdgeInsets.all(20.0),
                       child: Column(
@@ -233,7 +233,7 @@ class _PengepulDashboardScreenState extends State<PengepulDashboardScreen> {
                       );
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green[700],
+                      backgroundColor: Colors.green,
                       foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),

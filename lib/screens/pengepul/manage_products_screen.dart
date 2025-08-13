@@ -26,7 +26,15 @@ class _ManageProductsScreenState extends State<ManageProductsScreen> {
     return Consumer2<ProductsProvider, TransactionProvider>(
       builder: (context, productsProvider, transactionProvider, child) {
         return Scaffold(
-          appBar: AppBar(title: const Text('Kelola Produk')),
+          appBar: AppBar(
+            title: const Text('Kelola Produk'),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.add),
+                onPressed: () => _showAddEditProductDialog(context),
+              ),
+            ],
+          ),
           body: productsProvider.isLoading
               ? const Center(child: CircularProgressIndicator())
               : productsProvider.errorMessage != null
@@ -97,10 +105,6 @@ class _ManageProductsScreenState extends State<ManageProductsScreen> {
                     );
                   },
                 ),
-          floatingActionButton: FloatingActionButton(
-            onPressed: () => _showAddEditProductDialog(context),
-            child: const Icon(Icons.add),
-          ),
         );
       },
     );
