@@ -16,6 +16,7 @@ import 'package:bank_sampah_app/screens/pengepul/pengepul_bar_chart_widget.dart'
 import 'package:bank_sampah_app/screens/pengepul/sell_waste_screen.dart';
 // Import halaman baru untuk laporan bendahara
 import 'package:bank_sampah_app/screens/pengepul/laporan_bendahara_screen.dart';
+import 'package:bank_sampah_app/models/user.dart'; // Pastikan model user diimpor
 
 class PengepulDashboardScreen extends StatefulWidget {
   const PengepulDashboardScreen({super.key});
@@ -349,6 +350,24 @@ class _PengepulDashboardScreenState extends State<PengepulDashboardScreen> {
                           itemBuilder: (context, index) {
                             final transaction = transactionProvider
                                 .pendingPengepulValidations[index];
+
+                            // Mencari nama pengguna dari daftar semua pengguna
+                            final AppUser? user = authProvider.allUsers
+                                .firstWhere(
+                                  (user) => user.id == transaction.userId,
+                                  orElse: () => AppUser(
+                                    id: transaction.userId,
+                                    email: '',
+                                    nama: 'Unknown User',
+                                    nik: '',
+                                    userType: UserType.nasabah,
+                                    validated: false,
+                                  ),
+                                );
+                            final String userName =
+                                user?.nama ??
+                                'User ID: ${transaction.userId.substring(0, 8)}...';
+
                             return Card(
                               margin: const EdgeInsets.symmetric(vertical: 4),
                               child: ListTile(
@@ -356,9 +375,8 @@ class _PengepulDashboardScreenState extends State<PengepulDashboardScreen> {
                                   Icons.hourglass_empty,
                                   color: Colors.orange,
                                 ),
-                                title: Text(
-                                  'Setoran dari User ID: ${transaction.userId.substring(0, 8)}...',
-                                ),
+                                // Menggunakan nama pengguna atau user ID sebagai cadangan
+                                title: Text('Setoran dari $userName'),
                                 subtitle: Text(
                                   '${transaction.sampahTypeName} - ${transaction.weightKg.toStringAsFixed(2)} kg (estimasi)\n'
                                   '${DateFormat('dd MMM HH:mm').format(transaction.timestamp)}',

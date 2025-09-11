@@ -9,19 +9,6 @@ import 'package:bank_sampah_app/models/sampah.dart';
 import 'package:bank_sampah_app/widgets/loading_indicator.dart';
 import 'package:intl/intl.dart';
 
-// --- HAPUS EKSTENSI INI KARENA KITA TIDAK AKAN MENGGUNAKANNYA LAGI ---
-// extension IterableExtension<T> on Iterable<T> {
-//   T? firstWhereOrNull(bool Function(T element) test) {
-//     for (final element in this) {
-//       if (test(element)) {
-//         return element;
-//       }
-//     }
-//     return null;
-//   }
-// }
-// --------------------------------------------------------------------
-
 class ValidasiSetoranScreen extends StatefulWidget {
   final String? initialTransactionId;
 
@@ -46,13 +33,10 @@ class _ValidasiSetoranScreenState extends State<ValidasiSetoranScreen> {
       );
 
       transactionProvider.listenToPendingPengepulValidations();
-      // SampahPriceProvider sudah otomatis mendengarkan di konstruktornya,
-      // jadi tidak perlu memanggil fetchSampahTypes() di sini.
 
       if (widget.initialTransactionId != null) {
         final transactions = transactionProvider.pendingPengepulValidations;
 
-        // --- PERUBAHAN DI SINI: Menggunakan loop manual ---
         Transaction? foundTx;
         for (var tx in transactions) {
           if (tx.id == widget.initialTransactionId) {
@@ -60,7 +44,6 @@ class _ValidasiSetoranScreenState extends State<ValidasiSetoranScreen> {
             break;
           }
         }
-        // --------------------------------------------------
 
         if (foundTx != null) {
           setState(() {
@@ -121,13 +104,6 @@ class _ValidasiSetoranScreenState extends State<ValidasiSetoranScreen> {
       return;
     }
 
-    // Hapus baris ini:
-    // showDialog(
-    //   context: context,
-    //   barrierDismissible: false,
-    //   builder: (context) => const LoadingIndicator(),
-    // );
-
     try {
       await transactionProvider.validateSetoran(
         transactionId: _selectedTransaction!.id,
@@ -138,9 +114,6 @@ class _ValidasiSetoranScreenState extends State<ValidasiSetoranScreen> {
       );
 
       if (!mounted) return;
-
-      // Hapus baris ini:
-      // Navigator.of(context).pop();
 
       if (transactionProvider.errorMessage != null) {
         _showSnackBar(transactionProvider.errorMessage!, isError: true);
@@ -155,8 +128,6 @@ class _ValidasiSetoranScreenState extends State<ValidasiSetoranScreen> {
       }
     } catch (e) {
       if (!mounted) return;
-      // Hapus baris ini:
-      // Navigator.of(context).pop();
       _showSnackBar('Terjadi kesalahan: $e', isError: true);
     }
   }
@@ -172,11 +143,26 @@ class _ValidasiSetoranScreenState extends State<ValidasiSetoranScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Mengubah Consumer2 menjadi Consumer3 untuk mengakses AuthProvider
     return Scaffold(
       appBar: AppBar(title: const Text('Validasi Setoran Sampah')),
-      body: Consumer2<TransactionProvider, SampahPriceProvider>(
-        builder: (context, transactionProvider, sampahPriceProvider, child) {
-          if (transactionProvider.isLoading || sampahPriceProvider.isLoading) {
+      body: Consumer3<TransactionProvider, SampahPriceProvider, AuthProvider>(
+        builder: (context, transactionProvider, sampahPriceProvider, authProvider, child) {
+          // Fungsi helper untuk mendapatkan nama pengguna dari AuthProvider
+          String getUserName(String userId) {
+            try {
+              final user = authProvider.allUsers.firstWhere(
+                (user) => user.id == userId,
+              );
+              return user.nama;
+            } catch (e) {
+              return 'Nama tidak ditemukan';
+            }
+          }
+
+          if (transactionProvider.isLoading ||
+              sampahPriceProvider.isLoading ||
+              authProvider.isLoading) {
             return const Center(child: LoadingIndicator());
           }
 
@@ -191,6 +177,13 @@ class _ValidasiSetoranScreenState extends State<ValidasiSetoranScreen> {
             return Center(
               child: Text(
                 'Error Harga Sampah: ${sampahPriceProvider.errorMessage}\nHarap coba lagi.',
+              ),
+            );
+          }
+          if (authProvider.errorMessage != null) {
+            return Center(
+              child: Text(
+                'Error User: ${authProvider.errorMessage}\nHarap coba lagi.',
               ),
             );
           }
@@ -223,10 +216,12 @@ class _ValidasiSetoranScreenState extends State<ValidasiSetoranScreen> {
                           helperText: 'Pilih setoran dari daftar di bawah',
                         ),
                         items: pendingTransactions.map((tx) {
+                          // Menggunakan nama pengguna di DropdownMenuItem
+                          final userName = getUserName(tx.userId);
                           return DropdownMenuItem<Transaction>(
                             value: tx,
                             child: Text(
-                              '${DateFormat('dd MMM HH:mm').format(tx.timestamp)} - ${tx.sampahTypeName} (${tx.weightKg.toStringAsFixed(2)} kg) dari User ID: ${tx.userId.substring(0, 8)}...',
+                              '${DateFormat('dd MMM yyyy, HH:mm').format(tx.timestamp)} - ${tx.sampahTypeName} (${tx.weightKg.toStringAsFixed(2)} kg) dari: $userName',
                             ),
                           );
                         }).toList(),
@@ -363,6 +358,8 @@ class _ValidasiSetoranScreenState extends State<ValidasiSetoranScreen> {
                           itemCount: pendingTransactions.length,
                           itemBuilder: (context, index) {
                             final transaction = pendingTransactions[index];
+                            // Menggunakan nama pengguna di ListTile
+                            final userName = getUserName(transaction.userId);
                             return Card(
                               margin: const EdgeInsets.symmetric(
                                 horizontal: 16,
@@ -375,7 +372,7 @@ class _ValidasiSetoranScreenState extends State<ValidasiSetoranScreen> {
                                   color: Colors.orange,
                                 ),
                                 title: Text(
-                                  'Setoran dari User ID: ${transaction.userId}',
+                                  'Setoran dari: $userName',
                                   style: const TextStyle(
                                     fontWeight: FontWeight.bold,
                                   ),
@@ -383,7 +380,7 @@ class _ValidasiSetoranScreenState extends State<ValidasiSetoranScreen> {
                                 subtitle: Text(
                                   'Jenis Sampah: ${transaction.sampahTypeName}\n'
                                   'Estimasi Berat: ${transaction.weightKg.toStringAsFixed(2)} kg\n'
-                                  'Tanggal: ${DateFormat('dd MMMAPAC HH:mm').format(transaction.timestamp)}',
+                                  'Tanggal: ${DateFormat('dd MMM yyyy, HH:mm').format(transaction.timestamp)}',
                                 ),
                                 trailing: ElevatedButton(
                                   onPressed: () {
