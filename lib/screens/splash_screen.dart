@@ -1,3 +1,4 @@
+import 'package:bank_sampah_app/screens/common/guest_dashboard_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:bank_sampah_app/providers/auth_provider.dart';
@@ -46,9 +47,9 @@ class _SplashScreenState extends State<SplashScreen> {
       }
     } else {
       // User belum login, arahkan ke halaman login
-      Navigator.of(
-        context,
-      ).pushReplacement(MaterialPageRoute(builder: (_) => const LoginScreen()));
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const GuestDashboardScreen()),
+      );
     }
   }
 

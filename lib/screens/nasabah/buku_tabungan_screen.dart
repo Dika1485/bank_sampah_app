@@ -6,8 +6,9 @@ import 'package:bank_sampah_app/providers/transaction_provider.dart';
 import 'package:bank_sampah_app/widgets/loading_indicator.dart';
 import 'package:intl/intl.dart';
 import 'package:bank_sampah_app/models/transaction.dart';
-// Tidak perlu import 'package:bank_sampah_app/utils/pdf_generator.dart'; di sini jika hanya untuk PDF,
-// tapi jika ada penggunaan lain biarkan saja.
+
+// Import ini diperlukan untuk mengelola tanggal.
+import 'package:bank_sampah_app/utils/date_filter_util.dart';
 
 class BukuTabunganScreen extends StatefulWidget {
   const BukuTabunganScreen({super.key});
@@ -20,25 +21,119 @@ class _BukuTabunganScreenState extends State<BukuTabunganScreen> {
   @override
   void initState() {
     super.initState();
-    // Ensure transactions and balance are loaded for the current user
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       if (authProvider.appUser != null) {
-        // --- PERUBAHAN DI SINI: listenToNasabahData() ---
         Provider.of<TransactionProvider>(
           context,
           listen: false,
         ).listenToNasabahData(authProvider.appUser!.id);
-        // --------------------------------------------------
       }
     });
+  }
+
+  // Fungsi untuk menampilkan dialog pilihan cetak
+  void _showPrintOptions() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return SimpleDialog(
+          title: const Text(
+            'Cetak Laporan',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          children: <Widget>[
+            SimpleDialogOption(
+              onPressed: () {
+                Navigator.pop(context); // Tutup dialog
+                _generateReport('Mingguan');
+              },
+              child: const Text('Mingguan', style: TextStyle(fontSize: 16)),
+            ),
+            SimpleDialogOption(
+              onPressed: () {
+                Navigator.pop(context); // Tutup dialog
+                _generateReport('Bulanan');
+              },
+              child: const Text('Bulanan', style: TextStyle(fontSize: 16)),
+            ),
+            SimpleDialogOption(
+              onPressed: () {
+                Navigator.pop(context); // Tutup dialog
+                _generateReport('Tahunan');
+              },
+              child: const Text('Tahunan', style: TextStyle(fontSize: 16)),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // Fungsi untuk memfilter transaksi dan memanggil generator PDF
+  Future<void> _generateReport(String period) async {
+    final transactionProvider = Provider.of<TransactionProvider>(
+      context,
+      listen: false,
+    );
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
+    if (authProvider.appUser == null) return;
+
+    final allTransactions = transactionProvider.nasabahTransactions;
+    List<Transaction> filteredTransactions = [];
+
+    // Logika untuk memfilter berdasarkan periode
+    switch (period) {
+      case 'Mingguan':
+        final sevenDaysAgo = DateTime.now().subtract(const Duration(days: 7));
+        filteredTransactions = allTransactions
+            .where((t) => t.timestamp.isAfter(sevenDaysAgo))
+            .toList();
+        break;
+      case 'Bulanan':
+        final startOfMonth = DateTime(
+          DateTime.now().year,
+          DateTime.now().month,
+          1,
+        );
+        filteredTransactions = allTransactions
+            .where((t) => t.timestamp.isAfter(startOfMonth))
+            .toList();
+        break;
+      case 'Tahunan':
+        final startOfYear = DateTime(DateTime.now().year, 1, 1);
+        filteredTransactions = allTransactions
+            .where((t) => t.timestamp.isAfter(startOfYear))
+            .toList();
+        break;
+      default:
+        // Jika tidak ada pilihan, gunakan semua transaksi
+        filteredTransactions = allTransactions;
+        break;
+    }
+
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('Membuat laporan $period...')));
+
+    await PdfGenerator.generateNasabahReport(
+      nasabah: authProvider.appUser!,
+      transactions: filteredTransactions,
+      currentBalance: transactionProvider.nasabahBalance,
+      period: period,
+    );
+
+    if (mounted) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Laporan berhasil dibuat!')));
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final transactionProvider = Provider.of<TransactionProvider>(context);
-    final authProvider = Provider.of<AuthProvider>(context);
-
     final String formattedBalance = NumberFormat.currency(
       locale: 'id_ID',
       symbol: 'Rp ',
@@ -51,23 +146,9 @@ class _BukuTabunganScreenState extends State<BukuTabunganScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.print),
-            onPressed: () async {
-              if (authProvider.appUser != null) {
-                await PdfGenerator.generateNasabahReport(
-                  nasabah: authProvider.appUser!,
-                  transactions: transactionProvider.nasabahTransactions,
-                  currentBalance: transactionProvider.nasabahBalance,
-                );
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text(
-                        'Fungsi cetak laporan sedang dikembangkan.',
-                      ),
-                    ),
-                  );
-                }
-              }
+            onPressed: () {
+              // Panggil fungsi untuk menampilkan pilihan
+              _showPrintOptions();
             },
           ),
         ],

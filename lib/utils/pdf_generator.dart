@@ -3,7 +3,7 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:path_provider/path_provider.dart';
 import 'package:open_filex/open_filex.dart';
-import 'package:intl/intl.dart'; // Untuk format tanggal
+import 'package:intl/intl.dart';
 import 'package:bank_sampah_app/models/transaction.dart';
 import 'package:bank_sampah_app/models/user.dart';
 
@@ -12,10 +12,9 @@ class PdfGenerator {
     required AppUser nasabah,
     required List<Transaction> transactions,
     required double currentBalance,
+    String? period,
   }) async {
     final pdf = pw.Document();
-
-    // Filter transaksi yang completed untuk laporan
     final completedTransactions = transactions
         .where((t) => t.status == TransactionStatus.completed)
         .toList();
@@ -27,7 +26,7 @@ class PdfGenerator {
           return [
             pw.Center(
               child: pw.Text(
-                'Laporan Buku Tabungan Sampah',
+                'Laporan Buku Tabungan Sampah${period != null ? ' ($period)' : ''}',
                 style: pw.TextStyle(
                   fontSize: 24,
                   fontWeight: pw.FontWeight.bold,
@@ -103,37 +102,177 @@ class PdfGenerator {
       ),
     );
 
-    // Simpan file PDF
     final output = await getTemporaryDirectory();
     final file = File(
       '${output.path}/laporan_buku_tabungan_${nasabah.nama.replaceAll(' ', '_')}_${DateFormat('yyyyMMdd_HHmm').format(DateTime.now())}.pdf',
     );
     await file.writeAsBytes(await pdf.save());
-
-    // Buka file PDF
     await OpenFilex.open(file.path);
   }
 
-  // Anda bisa membuat fungsi serupa untuk Pengepul
-  static Future<void> generatePengepulReport({
-    required AppUser pengepul,
-    required List<Transaction> allTransactions, // Semua transaksi
+  // Laporan baru untuk bendahara
+  static Future<void> generateBendaharaReport({
+    required AppUser bendahara,
+    required List<Transaction> allTransactions,
+    String? period,
   }) async {
     final pdf = pw.Document();
 
-    // Filter transaksi yang relevan untuk pengepul (misal, semua setoran dan pencairan yang dia validasi)
+    // Kelompokkan dan hitung ringkasan transaksi
+    final Map<String, double> summary = {
+      'totalSetoran': 0.0,
+      'totalPencairan': 0.0,
+      'totalJualSampah': 0.0,
+      'totalProduk': 0.0,
+    };
+
+    allTransactions.forEach((t) {
+      if (t.status == TransactionStatus.completed) {
+        if (t.type == TransactionType.setoran) {
+          summary['totalSetoran'] = (summary['totalSetoran']! + t.amount);
+        } else if (t.type == TransactionType.pencairan) {
+          summary['totalPencairan'] = (summary['totalPencairan']! + t.amount);
+        } else if (t.type == TransactionType.jualsampah) {
+          summary['totalJualSampah'] = (summary['totalJualSampah']! + t.amount);
+        } else if (t.type == TransactionType.produk) {
+          summary['totalProduk'] = (summary['totalProduk']! + t.amount);
+        }
+      }
+    });
+
+    pdf.addPage(
+      pw.MultiPage(
+        pageFormat: PdfPageFormat.a4,
+        build: (pw.Context context) {
+          return [
+            pw.Center(
+              child: pw.Text(
+                'Laporan Operasional Bendahara${period != null ? ' ($period)' : ''}',
+                style: pw.TextStyle(
+                  fontSize: 24,
+                  fontWeight: pw.FontWeight.bold,
+                ),
+              ),
+            ),
+            pw.SizedBox(height: 20),
+            pw.Text(
+              'Nama Bendahara: ${bendahara.nama}',
+              style: const pw.TextStyle(fontSize: 14),
+            ),
+            pw.SizedBox(height: 10),
+            pw.Divider(),
+            pw.SizedBox(height: 10),
+            pw.Text(
+              'Ringkasan Transaksi:',
+              style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold),
+            ),
+            pw.SizedBox(height: 10),
+            pw.Table.fromTextArray(
+              data: [
+                [
+                  'Total Setoran Sampah',
+                  'Rp ${NumberFormat('#,##0', 'id_ID').format(summary['totalSetoran'])}',
+                ],
+                [
+                  'Total Pencairan Dana',
+                  'Rp ${NumberFormat('#,##0', 'id_ID').format(summary['totalPencairan'])}',
+                ],
+                [
+                  'Total Penjualan Sampah',
+                  'Rp ${NumberFormat('#,##0', 'id_ID').format(summary['totalJualSampah'])}',
+                ],
+                [
+                  'Total Penjualan Produk',
+                  'Rp ${NumberFormat('#,##0', 'id_ID').format(summary['totalProduk'])}',
+                ],
+              ],
+              cellAlignment: pw.Alignment.centerLeft,
+              cellPadding: const pw.EdgeInsets.all(5),
+            ),
+            pw.SizedBox(height: 20),
+            pw.Text(
+              'Riwayat Transaksi Rinci:',
+              style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold),
+            ),
+            pw.SizedBox(height: 10),
+            if (allTransactions.isEmpty)
+              pw.Text('Belum ada riwayat transaksi yang relevan.')
+            else
+              pw.Table.fromTextArray(
+                headers: [
+                  'Tanggal',
+                  'Jenis Transaksi',
+                  'Nasabah/Pengepul',
+                  'Nominal (Rp)',
+                  'Status',
+                ],
+                data: allTransactions.map((t) {
+                  return [
+                    DateFormat('dd-MM-yyyy HH:mm').format(t.timestamp),
+                    _getTransactionTypeLabel(t.type),
+                    t.type == TransactionType.setoran ||
+                            t.type == TransactionType.pencairan
+                        ? 'Nasabah ID: ${t.userId.substring(0, 5)}...'
+                        : 'Pengepul ID: ${t.pengepulId?.substring(0, 5) ?? 'N/A'}...',
+                    NumberFormat('#,##0', 'id_ID').format(t.amount),
+                    t.status.toString().split('.').last.toUpperCase(),
+                  ];
+                }).toList(),
+                border: pw.TableBorder.all(color: PdfColors.black),
+                headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+                cellAlignment: pw.Alignment.centerLeft,
+                cellPadding: const pw.EdgeInsets.all(5),
+              ),
+            pw.SizedBox(height: 20),
+            pw.Align(
+              alignment: pw.Alignment.bottomRight,
+              child: pw.Text(
+                'Dicetak pada: ${DateFormat('dd-MM-yyyy HH:mm').format(DateTime.now())}',
+              ),
+            ),
+          ];
+        },
+      ),
+    );
+
+    final output = await getTemporaryDirectory();
+    final file = File(
+      '${output.path}/laporan_bendahara_${bendahara.nama.replaceAll(' ', '_')}_${DateFormat('yyyyMMdd_HHmm').format(DateTime.now())}.pdf',
+    );
+    await file.writeAsBytes(await pdf.save());
+    await OpenFilex.open(file.path);
+  }
+
+  // Fungsi pembantu untuk mendapatkan label jenis transaksi
+  static String _getTransactionTypeLabel(TransactionType type) {
+    switch (type) {
+      case TransactionType.setoran:
+        return 'Setoran Sampah';
+      case TransactionType.pencairan:
+        return 'Pencairan Dana';
+      case TransactionType.jualsampah:
+        return 'Jual Sampah';
+      case TransactionType.produk:
+        return 'Produk';
+      default:
+        return 'Tidak Dikenal';
+    }
+  }
+
+  // Fungsi yang sudah ada, tidak ada perubahan
+  static Future<void> generatePengepulReport({
+    required AppUser pengepul,
+    required List<Transaction> allTransactions,
+  }) async {
+    final pdf = pw.Document();
     final relevantTransactions = allTransactions
         .where(
           (t) =>
               t.pengepulId == pengepul.id ||
               (t.type == TransactionType.setoran &&
-                  t.status ==
-                      TransactionStatus
-                          .completed), // Pengepul melihat semua setoran yg completed
+                  t.status == TransactionStatus.completed),
         )
         .toList();
-
-    // Hitung ringkasan performa untuk pengepul
     double totalSampahDiterimaKg = relevantTransactions
         .where(
           (t) =>
@@ -141,7 +280,6 @@ class PdfGenerator {
               t.status == TransactionStatus.completed,
         )
         .fold(0.0, (sum, item) => sum + item.weightKg);
-
     double totalUangDikeluarkanPencairan = relevantTransactions
         .where(
           (t) =>
@@ -149,7 +287,6 @@ class PdfGenerator {
               t.status == TransactionStatus.completed,
         )
         .fold(0.0, (sum, item) => sum + item.amount);
-
     double totalNilaiSetoranMasuk = relevantTransactions
         .where(
           (t) =>
@@ -157,7 +294,6 @@ class PdfGenerator {
               t.status == TransactionStatus.completed,
         )
         .fold(0.0, (sum, item) => sum + item.amount);
-
     pdf.addPage(
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
@@ -233,12 +369,10 @@ class PdfGenerator {
                   'Nominal (Rp)',
                 ],
                 data: relevantTransactions.map((t) {
-                  // Anda perlu mengambil nama nasabah dari Firestore berdasarkan t.userId
-                  // Untuk contoh ini, saya akan menampilkan ID user saja.
                   return [
                     DateFormat('dd-MM-yyyy HH:mm').format(t.timestamp),
                     t.type == TransactionType.setoran ? 'Setoran' : 'Pencairan',
-                    'User ID: ${t.userId.substring(0, 5)}...', // Contoh singkat
+                    'User ID: ${t.userId.substring(0, 5)}...',
                     t.sampahTypeName.isNotEmpty ? t.sampahTypeName : '-',
                     t.weightKg > 0
                         ? '${t.weightKg.toStringAsFixed(2)} kg'

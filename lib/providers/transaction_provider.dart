@@ -18,6 +18,10 @@ class TransactionProvider with ChangeNotifier {
   bool _isLoading = false;
   String? _errorMessage;
 
+  // Properti baru untuk laporan bendahara
+  List<Transaction> _allTransactions = [];
+  List<Transaction> get allTransactions => _allTransactions;
+
   // Properti dan subscription baru untuk stok sampah
   Map<String, double> _wasteStock = {};
   StreamSubscription? _wasteStockSubscription;
@@ -39,6 +43,14 @@ class TransactionProvider with ChangeNotifier {
   StreamSubscription? _pendingWithdrawalRequestSubscription;
   StreamSubscription? _nasabahBalanceSubscription;
 
+  // Subscription baru untuk semua transaksi
+  StreamSubscription? _transactionsSubscription;
+  StreamSubscription? _salesTransactionsSubscription;
+
+  // Data sementara untuk digabungkan
+  List<Transaction> _tempTransactions = [];
+  List<Transaction> _tempSalesTransactions = [];
+
   TransactionProvider() {
     _listenToWasteStock(); // Panggil fungsi untuk mendengarkan stok
   }
@@ -49,7 +61,9 @@ class TransactionProvider with ChangeNotifier {
     _pendingPengepulValidationSubscription?.cancel();
     _pendingWithdrawalRequestSubscription?.cancel();
     _nasabahBalanceSubscription?.cancel();
-    _wasteStockSubscription?.cancel(); // Batalkan subscription stok
+    _wasteStockSubscription?.cancel();
+    _transactionsSubscription?.cancel();
+    _salesTransactionsSubscription?.cancel();
     super.dispose();
   }
 
@@ -78,6 +92,91 @@ class TransactionProvider with ChangeNotifier {
             print('Error fetching waste stock: $error');
           },
         );
+  }
+
+  // --- Fungsi untuk menggabungkan dan mengurutkan semua transaksi ---
+  void _combineAndSortTransactions() {
+    _allTransactions = [..._tempTransactions, ..._tempSalesTransactions];
+    _allTransactions.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+    notifyListeners();
+  }
+
+  // MARK: - Fungsi Bendahara
+  void listenToAllTransactions() {
+    _isLoading = true;
+    notifyListeners();
+
+    _transactionsSubscription?.cancel();
+    _transactionsSubscription = _firestore
+        .collection('transactions')
+        .orderBy('timestamp', descending: true)
+        .snapshots()
+        .listen(
+          (transactionSnapshot) {
+            _tempTransactions = transactionSnapshot.docs
+                .map((doc) => Transaction.fromFirestore(doc.data(), doc.id))
+                .toList();
+            _combineAndSortTransactions();
+            _isLoading = false;
+          },
+          onError: (error) {
+            _errorMessage = 'Gagal memuat transaksi utama: $error';
+            _isLoading = false;
+            notifyListeners();
+          },
+        );
+
+    _salesTransactionsSubscription?.cancel();
+    _salesTransactionsSubscription = _firestore
+        .collection('sales_transactions')
+        .orderBy('timestamp', descending: true)
+        .snapshots()
+        .listen(
+          (salesSnapshot) {
+            _tempSalesTransactions = salesSnapshot.docs.map((doc) {
+              final data = doc.data();
+              // Mengkonversi data penjualan ke model Transaction
+              // Ini diperlukan karena struktur data sales_transactions berbeda
+              // dari koleksi transactions.
+              return Transaction(
+                id: doc.id,
+                userId: '',
+                pengepulId: 'bendahara',
+                type: _mapSalesType(data['type']),
+                sampahTypeId: '',
+                sampahTypeName: data['type'] == 'penjualan_sampah'
+                    ? 'Jual Sampah ke Pabrik'
+                    : (data['product_name'] ?? 'Produk'),
+                weightKg: data['type'] == 'penjualan_sampah'
+                    ? (data['waste_data']?.values.fold(
+                            0.0,
+                            (sum, item) => sum + (item as num),
+                          ) ??
+                          0.0)
+                    : 0.0,
+                amount: (data['revenue'] as num).toDouble(),
+                timestamp: (data['timestamp'] as Timestamp).toDate(),
+                status: TransactionStatus.completed,
+              );
+            }).toList();
+            _combineAndSortTransactions();
+            _isLoading = false;
+          },
+          onError: (error) {
+            _errorMessage = 'Gagal memuat transaksi penjualan: $error';
+            _isLoading = false;
+            notifyListeners();
+          },
+        );
+  }
+
+  // Helper function untuk memetakan string tipe penjualan ke enum
+  TransactionType _mapSalesType(String typeString) {
+    if (typeString == 'penjualan_sampah') {
+      return TransactionType.jualsampah;
+    } else {
+      return TransactionType.produk;
+    }
   }
 
   // MARK: - Fungsi Nasabah

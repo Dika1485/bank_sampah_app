@@ -1,4 +1,5 @@
 import 'package:bank_sampah_app/models/user.dart';
+import 'package:bank_sampah_app/screens/common/guest_dashboard_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:bank_sampah_app/providers/auth_provider.dart';
@@ -241,7 +242,7 @@ class ProfileScreen extends StatelessWidget {
                   // Navigate to LoginScreen after successful logout
                   Navigator.of(context).pushAndRemoveUntil(
                     MaterialPageRoute(
-                      builder: (context) => const LoginScreen(),
+                      builder: (context) => const GuestDashboardScreen(),
                     ),
                     (Route<dynamic> route) =>
                         false, // Remove all previous routes

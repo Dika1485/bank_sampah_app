@@ -1,4 +1,4 @@
-enum UserType { nasabah, direktur, sekretaris, bendahara, edukasi }
+enum UserType { nasabah, direktur, sekretaris, bendahara, edukasi, produksi }
 
 class AppUser {
   final String id;
@@ -33,6 +33,8 @@ class AppUser {
           ? UserType.bendahara
           : (data['userType'] == 'edukasi')
           ? UserType.edukasi
+          : (data['userType'] == 'produksi')
+          ? UserType.produksi
           : UserType.nasabah,
       validated: data['validated'] ?? false,
       balance: (data['balance'] as num?)?.toDouble() ?? 0.0, // Ambil saldo
@@ -52,6 +54,8 @@ class AppUser {
           ? 'bendahara'
           : userType == UserType.edukasi
           ? 'edukasi'
+          : userType == UserType.produksi
+          ? 'produksi'
           : 'nasabah',
       'validated': validated,
       'balance': balance, // Simpan saldo

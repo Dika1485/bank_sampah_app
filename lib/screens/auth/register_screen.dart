@@ -149,6 +149,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       value: UserType.edukasi,
                       child: Text('Edukasi'),
                     ),
+                    DropdownMenuItem(
+                      value: UserType.produksi,
+                      child: Text('Produksi'),
+                    ),
                   ],
                   onChanged: (UserType? newValue) {
                     setState(() {

@@ -4,6 +4,7 @@ import 'package:bank_sampah_app/screens/admin/user_validation_screen.dart';
 import 'package:bank_sampah_app/screens/auth/register_screen.dart';
 import 'package:bank_sampah_app/screens/common/profile_screen.dart';
 import 'package:bank_sampah_app/screens/edukasi/edukasi_dashboard_screen.dart';
+import 'package:bank_sampah_app/screens/produksi/produksi_dashboard_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:bank_sampah_app/providers/auth_provider.dart';
@@ -46,29 +47,73 @@ class _LoginScreenState extends State<LoginScreen> {
       } else if (authProvider.appUser != null) {
         // Navigasi berdasarkan tipe user
         if (authProvider.appUser!.userType == UserType.nasabah) {
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (_) => const NasabahDashboardScreen()),
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(
+              builder: (context) => const NasabahDashboardScreen(),
+            ),
+            (Route<dynamic> route) => false, // Remove all previous routes
           );
+          // Navigator.of(context).pushReplacement(
+          //   MaterialPageRoute(builder: (_) => const NasabahDashboardScreen()),
+          // );
         } else if (authProvider.appUser!.validated == false) {
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (_) => const ProfileScreen()),
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(builder: (context) => const ProfileScreen()),
+            (Route<dynamic> route) => false, // Remove all previous routes
           );
+          // Navigator.of(context).pushReplacement(
+          //   MaterialPageRoute(builder: (_) => const ProfileScreen()),
+          // );
         } else if (authProvider.appUser!.userType == UserType.direktur) {
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (_) => const AdminDashboardScreen()),
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(
+              builder: (context) => const AdminDashboardScreen(),
+            ),
+            (Route<dynamic> route) => false, // Remove all previous routes
           );
+          // Navigator.of(context).pushReplacement(
+          //   MaterialPageRoute(builder: (_) => const AdminDashboardScreen()),
+          // );
         } else if (authProvider.appUser!.userType == UserType.sekretaris) {
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (_) => const AdminDashboardScreen()),
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(
+              builder: (context) => const AdminDashboardScreen(),
+            ),
+            (Route<dynamic> route) => false, // Remove all previous routes
           );
+          // Navigator.of(context).pushReplacement(
+          //   MaterialPageRoute(builder: (_) => const AdminDashboardScreen()),
+          // );
         } else if (authProvider.appUser!.userType == UserType.bendahara) {
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (_) => const PengepulDashboardScreen()),
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(
+              builder: (context) => const PengepulDashboardScreen(),
+            ),
+            (Route<dynamic> route) => false, // Remove all previous routes
           );
+          // Navigator.of(context).pushReplacement(
+          //   MaterialPageRoute(builder: (_) => const PengepulDashboardScreen()),
+          // );
         } else if (authProvider.appUser!.userType == UserType.edukasi) {
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (_) => const EdukasiDashboardScreen()),
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(
+              builder: (context) => const EdukasiDashboardScreen(),
+            ),
+            (Route<dynamic> route) => false, // Remove all previous routes
           );
+          // Navigator.of(context).pushReplacement(
+          //   MaterialPageRoute(builder: (_) => const EdukasiDashboardScreen()),
+          // );
+        } else if (authProvider.appUser!.userType == UserType.produksi) {
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(
+              builder: (context) => const ProduksiDashboardScreen(),
+            ),
+            (Route<dynamic> route) => false, // Remove all previous routes
+          );
+          // Navigator.of(context).pushReplacement(
+          //   MaterialPageRoute(builder: (_) => const ProduksiDashboardScreen()),
+          // );
         }
       }
     }

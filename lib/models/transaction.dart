@@ -1,12 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-enum TransactionType { setoran, pencairan }
+// Tipe transaksi yang diperluas
+enum TransactionType { setoran, pencairan, jualsampah, produk }
 
-enum TransactionStatus {
-  pending,
-  completed,
-  rejected,
-} // Untuk setoran yang perlu divalidasi
+// Status validasi transaksi
+enum TransactionStatus { pending, completed, rejected }
 
 class Transaction {
   final String id;
@@ -33,14 +31,13 @@ class Transaction {
     required this.status,
   });
 
+  // Factory constructor untuk membuat objek Transaction dari Firestore
   factory Transaction.fromFirestore(Map<String, dynamic> data, String id) {
     return Transaction(
       id: id,
       userId: data['userId'] ?? '',
       pengepulId: data['pengepulId'],
-      type: (data['type'] == 'setoran')
-          ? TransactionType.setoran
-          : TransactionType.pencairan,
+      type: _mapTypeFromString(data['type']), // Menggunakan helper function
       sampahTypeId: data['sampahTypeId'] ?? '',
       sampahTypeName: data['sampahTypeName'] ?? '',
       weightKg: (data['weightKg'] as num?)?.toDouble() ?? 0.0,
@@ -50,11 +47,15 @@ class Transaction {
     );
   }
 
+  // Method untuk mengubah objek Transaction menjadi format yang bisa disimpan di Firestore
   Map<String, dynamic> toFirestore() {
     return {
       'userId': userId,
       'pengepulId': pengepulId,
-      'type': type == TransactionType.setoran ? 'setoran' : 'pencairan',
+      'type': type
+          .toString()
+          .split('.')
+          .last, // 'setoran', 'pencairan', 'jualsampah', 'produk'
       'sampahTypeId': sampahTypeId,
       'sampahTypeName': sampahTypeName,
       'weightKg': weightKg,
@@ -67,6 +68,7 @@ class Transaction {
     };
   }
 
+  // Helper function untuk memetakan string status menjadi enum
   static TransactionStatus _mapStatusFromString(String statusString) {
     switch (statusString) {
       case 'pending':
@@ -76,19 +78,32 @@ class Transaction {
       case 'rejected':
         return TransactionStatus.rejected;
       default:
-        return TransactionStatus.pending; // Default atau throw error
+        return TransactionStatus.pending;
+    }
+  }
+
+  // Helper function baru untuk memetakan string tipe transaksi menjadi enum
+  static TransactionType _mapTypeFromString(String typeString) {
+    switch (typeString) {
+      case 'setoran':
+        return TransactionType.setoran;
+      case 'pencairan':
+        return TransactionType.pencairan;
+      case 'jualsampah':
+        return TransactionType.jualsampah;
+      case 'produk':
+        return TransactionType.produk;
+      default:
+        return TransactionType.setoran;
     }
   }
 
   @override
   bool operator ==(Object other) {
-    // Dua objek Transaction dianggap sama jika ID-nya sama
-    if (identical(this, other))
-      return true; // Jika objeknya sama persis di memori
-    return other is Transaction && // Jika 'other' adalah objek Transaction
-        other.id == id; // Dan ID-nya sama
+    if (identical(this, other)) return true;
+    return other is Transaction && other.id == id;
   }
 
   @override
-  int get hashCode => id.hashCode; // Hash code harus berdasarkan ID
+  int get hashCode => id.hashCode;
 }

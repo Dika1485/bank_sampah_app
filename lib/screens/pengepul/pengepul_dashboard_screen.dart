@@ -1,5 +1,5 @@
 import 'package:bank_sampah_app/providers/bank_balance_provider.dart';
-import 'package:bank_sampah_app/screens/pengepul/manage_products_screen.dart';
+import 'package:bank_sampah_app/screens/produksi/manage_products_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:bank_sampah_app/providers/auth_provider.dart';
@@ -13,7 +13,9 @@ import 'package:bank_sampah_app/widgets/loading_indicator.dart';
 import 'package:intl/intl.dart';
 import 'package:bank_sampah_app/screens/pengepul/validasi_pencairan_screen.dart';
 import 'package:bank_sampah_app/screens/pengepul/pengepul_bar_chart_widget.dart';
-import 'package:bank_sampah_app/screens/pengepul/sell_waste_screen.dart'; // Import halaman baru
+import 'package:bank_sampah_app/screens/pengepul/sell_waste_screen.dart';
+// Import halaman baru untuk laporan bendahara
+import 'package:bank_sampah_app/screens/pengepul/laporan_bendahara_screen.dart';
 
 class PengepulDashboardScreen extends StatefulWidget {
   const PengepulDashboardScreen({super.key});
@@ -24,6 +26,9 @@ class PengepulDashboardScreen extends StatefulWidget {
 }
 
 class _PengepulDashboardScreenState extends State<PengepulDashboardScreen> {
+  // Tambahkan state untuk mengontrol indeks bottom navigation bar
+  int _selectedIndex = 0;
+
   @override
   void initState() {
     super.initState();
@@ -37,6 +42,51 @@ class _PengepulDashboardScreenState extends State<PengepulDashboardScreen> {
         listen: false,
       ).listenToPendingWithdrawalRequests();
     });
+  }
+
+  // Fungsi untuk menangani navigasi
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+
+    switch (index) {
+      case 0:
+        // Navigasi ke halaman Home (Dashboard)
+        break;
+      case 1:
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => const ValidasiSetoranScreen(),
+          ),
+        );
+        break;
+      case 2:
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => const ValidasiPencairanScreen(),
+          ),
+        );
+        break;
+      case 3:
+        Navigator.of(context).push(
+          MaterialPageRoute(builder: (context) => const HargaSampahScreen()),
+        );
+        break;
+      case 4:
+        Navigator.of(context).push(
+          MaterialPageRoute(builder: (context) => const SellWasteScreen()),
+        );
+        break;
+      case 5:
+        // Navigasi ke halaman Laporan Bendahara
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => const LaporanBendaharaScreen(),
+          ),
+        );
+        break;
+    }
   }
 
   @override
@@ -362,49 +412,16 @@ class _PengepulDashboardScreenState extends State<PengepulDashboardScreen> {
             icon: Icon(Icons.attach_money),
             label: 'Harga',
           ),
+          BottomNavigationBarItem(icon: Icon(Icons.sell), label: 'Jual Sampah'),
+          // Tambahkan item baru untuk Laporan Bendahara
           BottomNavigationBarItem(
-            icon: Icon(Icons.shopping_bag),
-            label: 'Produk',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.sell), // Ikon baru untuk Jual Sampah
-            label: 'Jual Sampah', // Label baru
+            icon: Icon(Icons.description),
+            label: 'Laporan',
           ),
         ],
-        currentIndex: 0,
+        currentIndex: _selectedIndex, // Menggunakan state untuk index
         type: BottomNavigationBarType.fixed,
-        onTap: (index) {
-          if (index == 1) {
-            Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (context) => const ValidasiSetoranScreen(),
-              ),
-            );
-          } else if (index == 2) {
-            Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (context) => const ValidasiPencairanScreen(),
-              ),
-            );
-          } else if (index == 3) {
-            Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (context) => const HargaSampahScreen(),
-              ),
-            );
-          } else if (index == 4) {
-            Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (context) => const ManageProductsScreen(),
-              ),
-            );
-          } else if (index == 5) {
-            // Index baru untuk Jual Sampah
-            Navigator.of(context).push(
-              MaterialPageRoute(builder: (context) => const SellWasteScreen()),
-            );
-          }
-        },
+        onTap: _onItemTapped, // Gunakan fungsi terpisah
       ),
     );
   }
