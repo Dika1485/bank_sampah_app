@@ -57,7 +57,7 @@ class NasabahChartWidget extends StatelessWidget {
           color: pieColors[i % pieColors.length],
           value: value, // Nilai absolut berat
           title: '${percentage.toStringAsFixed(1)}%',
-          radius: 80,
+          radius: 50,
           titleStyle: const TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.bold,

@@ -2,13 +2,12 @@ import 'package:bank_sampah_app/screens/auth/login_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:bank_sampah_app/providers/auth_provider.dart';
-import 'package:bank_sampah_app/models/user.dart';
+import 'package:bank_sampah_app/models/user.dart'; // Pastikan path dan UserType sudah benar
 import 'package:bank_sampah_app/widgets/loading_indicator.dart';
 import 'package:bank_sampah_app/utils/validators.dart'; // Import validator
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
-
   @override
   State<RegisterScreen> createState() => _RegisterScreenState();
 }
@@ -21,6 +20,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final TextEditingController _nikController = TextEditingController();
 
   UserType? _selectedUserType;
+
+  // 1. Tambahkan state untuk mengontrol visibilitas password
+  bool _isPasswordVisible = false;
 
   @override
   void dispose() {
@@ -111,13 +113,29 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   validator: (value) => AppValidators.validateEmail(value),
                 ),
                 const SizedBox(height: 16.0),
+                // Modifikasi TextFormField untuk password
                 TextFormField(
                   controller: _passwordController,
-                  decoration: const InputDecoration(
+                  // Gunakan state _isPasswordVisible untuk menentukan apakah password disembunyikan
+                  obscureText: !_isPasswordVisible,
+                  decoration: InputDecoration(
                     labelText: 'Password',
-                    border: OutlineInputBorder(),
+                    border: const OutlineInputBorder(),
+                    // Tambahkan tombol toggle (ikon mata)
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _isPasswordVisible
+                            ? Icons.visibility
+                            : Icons.visibility_off,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _isPasswordVisible =
+                              !_isPasswordVisible; // Toggle state
+                        });
+                      },
+                    ),
                   ),
-                  obscureText: true,
                   validator: (value) => AppValidators.validatePassword(value),
                 ),
                 const SizedBox(height: 16.0),

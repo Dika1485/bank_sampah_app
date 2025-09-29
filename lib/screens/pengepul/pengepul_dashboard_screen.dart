@@ -34,26 +34,39 @@ class _PengepulDashboardScreenState extends State<PengepulDashboardScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Pastikan fungsi ini yang mengisi transactionProvider.nasabahTransactions
+      Provider.of<TransactionProvider>(
+        context,
+        listen: false,
+      ).listenToAllTransactions();
+
       Provider.of<TransactionProvider>(
         context,
         listen: false,
       ).listenToPendingPengepulValidations();
+
       Provider.of<TransactionProvider>(
         context,
         listen: false,
       ).listenToPendingWithdrawalRequests();
+
+      // OPTIONAL: Panggil fetch data lain yang mungkin dibutuhkan charts (jika ada)
     });
   }
 
   // Fungsi untuk menangani navigasi
   void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
+    // Reset _selectedIndex ke 0 jika navigasi ke halaman lain terjadi,
+    // agar tampilan dashboard tidak terlihat seperti terpotong.
+    if (index != 0) {
+      // Kita tidak perlu mengubah _selectedIndex = index di sini,
+      // karena kita melakukan push() ke halaman baru, bukan switch tab.
+      // Cukup pastikan dashboard tetap terlihat sebagai 'Home'.
+    }
 
     switch (index) {
       case 0:
-        // Navigasi ke halaman Home (Dashboard)
+        // Navigasi ke halaman Home (Dashboard) - Sudah ada di sini
         break;
       case 1:
         Navigator.of(context).push(
@@ -111,6 +124,10 @@ class _PengepulDashboardScreenState extends State<PengepulDashboardScreen> {
     final int pendingWithdrawalCount =
         transactionProvider.pendingWithdrawalRequests.length;
     final double totalRevenue = bankBalanceProvider.totalRevenue;
+
+    // Cek apakah ada data transaksi untuk analisis
+    final bool hasTransactionData =
+        transactionProvider.nasabahTransactions.isNotEmpty;
 
     return Scaffold(
       appBar: AppBar(
@@ -305,17 +322,54 @@ class _PengepulDashboardScreenState extends State<PengepulDashboardScreen> {
                     style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 10),
-                  // Bar Chart untuk berat sampah per jenis
-                  PengepulBarChartWidget(
-                    transactions: transactionProvider
-                        .nasabahTransactions, // Asumsikan ini berisi semua transaksi setoran
-                  ),
-                  const SizedBox(height: 20),
-                  // Line Chart untuk berat sampah per bulan
-                  PengepulChartWidget(
-                    transactions: transactionProvider
-                        .nasabahTransactions, // Asumsikan ini berisi semua transaksi setoran
-                  ),
+                  // --- START: Bagian Analisis Operasional yang Diperbarui ---
+                  if (!hasTransactionData)
+                    const Card(
+                      elevation: 2,
+                      child: Padding(
+                        padding: EdgeInsets.all(24.0),
+                        child: Center(
+                          child: Column(
+                            children: [
+                              Icon(
+                                Icons.bar_chart_outlined,
+                                size: 40,
+                                color: Colors.grey,
+                              ),
+                              SizedBox(height: 10),
+                              Text(
+                                'Data Operasional Belum Tersedia.',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              SizedBox(height: 5),
+                              Text(
+                                'Grafik akan muncul setelah ada data setoran yang tervalidasi.',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(color: Colors.grey),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    )
+                  else
+                    Column(
+                      children: [
+                        // Bar Chart untuk berat sampah per jenis
+                        PengepulBarChartWidget(
+                          transactions: transactionProvider.nasabahTransactions,
+                        ),
+                        const SizedBox(height: 20),
+                        // Line Chart untuk berat sampah per bulan
+                        PengepulChartWidget(
+                          transactions: transactionProvider.nasabahTransactions,
+                        ),
+                      ],
+                    ),
+                  // --- END: Bagian Analisis Operasional yang Diperbarui ---
                   const SizedBox(height: 20),
                   // Bagian untuk daftar setoran menunggu validasi
                   const Text(
@@ -437,7 +491,7 @@ class _PengepulDashboardScreenState extends State<PengepulDashboardScreen> {
             label: 'Laporan',
           ),
         ],
-        currentIndex: _selectedIndex, // Menggunakan state untuk index
+        currentIndex: 0, // Selalu di 0 karena navigasi menggunakan push
         type: BottomNavigationBarType.fixed,
         onTap: _onItemTapped, // Gunakan fungsi terpisah
       ),

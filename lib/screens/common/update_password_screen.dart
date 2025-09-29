@@ -20,6 +20,11 @@ class _UpdatePasswordScreenState extends State<UpdatePasswordScreen> {
       TextEditingController();
   final _formKey = GlobalKey<FormState>();
 
+  // Tambahkan state untuk mengontrol visibilitas setiap password
+  bool _isCurrentPasswordVisible = false;
+  bool _isNewPasswordVisible = false;
+  bool _isConfirmNewPasswordVisible = false;
+
   @override
   void dispose() {
     _currentPasswordController.dispose();
@@ -104,13 +109,30 @@ class _UpdatePasswordScreenState extends State<UpdatePasswordScreen> {
                           style: TextStyle(fontSize: 14, color: Colors.grey),
                         ),
                         const SizedBox(height: 20),
+
+                        // FIELD: PASSWORD LAMA
                         TextFormField(
                           controller: _currentPasswordController,
-                          decoration: const InputDecoration(
+                          obscureText:
+                              !_isCurrentPasswordVisible, // Menggunakan state
+                          decoration: InputDecoration(
+                            // Hapus const
                             labelText: 'Password Lama',
-                            border: OutlineInputBorder(),
+                            border: const OutlineInputBorder(),
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                _isCurrentPasswordVisible
+                                    ? Icons.visibility
+                                    : Icons.visibility_off,
+                              ),
+                              onPressed: () {
+                                setState(() {
+                                  _isCurrentPasswordVisible =
+                                      !_isCurrentPasswordVisible;
+                                });
+                              },
+                            ),
                           ),
-                          obscureText: true,
                           validator: (value) {
                             if (value == null || value.isEmpty) {
                               return 'Password lama tidak boleh kosong';
@@ -119,13 +141,30 @@ class _UpdatePasswordScreenState extends State<UpdatePasswordScreen> {
                           },
                         ),
                         const SizedBox(height: 16.0),
+
+                        // FIELD: PASSWORD BARU
                         TextFormField(
                           controller: _newPasswordController,
-                          decoration: const InputDecoration(
+                          obscureText:
+                              !_isNewPasswordVisible, // Menggunakan state
+                          decoration: InputDecoration(
+                            // Hapus const
                             labelText: 'Password Baru',
-                            border: OutlineInputBorder(),
+                            border: const OutlineInputBorder(),
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                _isNewPasswordVisible
+                                    ? Icons.visibility
+                                    : Icons.visibility_off,
+                              ),
+                              onPressed: () {
+                                setState(() {
+                                  _isNewPasswordVisible =
+                                      !_isNewPasswordVisible;
+                                });
+                              },
+                            ),
                           ),
-                          obscureText: true,
                           validator: (value) {
                             if (value == null ||
                                 value.isEmpty ||
@@ -136,13 +175,30 @@ class _UpdatePasswordScreenState extends State<UpdatePasswordScreen> {
                           },
                         ),
                         const SizedBox(height: 16.0),
+
+                        // FIELD: KONFIRMASI PASSWORD BARU
                         TextFormField(
                           controller: _confirmNewPasswordController,
-                          decoration: const InputDecoration(
+                          obscureText:
+                              !_isConfirmNewPasswordVisible, // Menggunakan state
+                          decoration: InputDecoration(
+                            // Hapus const
                             labelText: 'Konfirmasi Password Baru',
-                            border: OutlineInputBorder(),
+                            border: const OutlineInputBorder(),
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                _isConfirmNewPasswordVisible
+                                    ? Icons.visibility
+                                    : Icons.visibility_off,
+                              ),
+                              onPressed: () {
+                                setState(() {
+                                  _isConfirmNewPasswordVisible =
+                                      !_isConfirmNewPasswordVisible;
+                                });
+                              },
+                            ),
                           ),
-                          obscureText: true,
                           validator: (value) {
                             if (value == null || value.isEmpty) {
                               return 'Konfirmasi password tidak boleh kosong';

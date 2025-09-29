@@ -20,7 +20,8 @@ class _LaporanBendaharaScreenState extends State<LaporanBendaharaScreen> {
   void initState() {
     super.initState();
     // Memuat semua transaksi saat layar diinisialisasi
-    // Asumsi: TransactionProvider memiliki method untuk ini
+    // Catatan: Data pengguna (allUsers) sudah dimuat oleh AuthProvider
+    // di constructor atau saat sign-in, jadi tidak perlu dipanggil di sini.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<TransactionProvider>(
         context,
@@ -75,9 +76,17 @@ class _LaporanBendaharaScreenState extends State<LaporanBendaharaScreen> {
     );
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
-    if (authProvider.appUser == null) return;
+    if (authProvider.appUser == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Error: Data Bendahara tidak ditemukan.')),
+      );
+      return;
+    }
 
+    // Mengambil semua data transaksi
     final allTransactions = transactionProvider.allTransactions;
+    // Mengambil semua data pengguna (user) untuk lookup nama
+    final allUsers = authProvider.allUsers;
 
     final filteredTransactions = DateFilterUtil.filterTransactionsByPeriod(
       allTransactions,
@@ -88,10 +97,11 @@ class _LaporanBendaharaScreenState extends State<LaporanBendaharaScreen> {
       context,
     ).showSnackBar(SnackBar(content: Text('Membuat laporan $period...')));
 
-    // Memanggil fungsi baru di PdfGenerator untuk bendahara
+    // Panggilan ke PdfGenerator dengan parameter allUsers
     await PdfGenerator.generateBendaharaReport(
       bendahara: authProvider.appUser!,
       allTransactions: filteredTransactions,
+      allUsers: allUsers, // Memasukkan daftar semua user
       period: period,
     );
 
@@ -104,7 +114,9 @@ class _LaporanBendaharaScreenState extends State<LaporanBendaharaScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Listen ke kedua provider untuk state loading dan data terbaru
     final transactionProvider = Provider.of<TransactionProvider>(context);
+    final authProvider = Provider.of<AuthProvider>(context);
 
     // Data ringkasan untuk tampilan dashboard
     final Map<String, dynamic> summary = DateFilterUtil.calculateSummary(
@@ -117,13 +129,16 @@ class _LaporanBendaharaScreenState extends State<LaporanBendaharaScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.print),
-            onPressed: () {
-              _showPrintOptions();
-            },
+            // Tombol cetak hanya aktif jika semua data (transaksi & user) sudah selesai dimuat
+            onPressed: authProvider.isLoading || transactionProvider.isLoading
+                ? null
+                : () {
+                    _showPrintOptions();
+                  },
           ),
         ],
       ),
-      body: transactionProvider.isLoading
+      body: transactionProvider.isLoading || authProvider.isLoading
           ? const LoadingIndicator()
           : SingleChildScrollView(
               child: Padding(

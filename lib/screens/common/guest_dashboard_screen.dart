@@ -82,7 +82,7 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
                     ),
                     const SizedBox(height: 10),
                     const Text(
-                      'Kelola tabungan sampah Anda, tukarkan poin, dan ikut serta dalam acara komunitas.',
+                      'Kelola tabungan sampah Anda, tukarkan saldo, dan ikut serta dalam acara komunitas.',
                       style: TextStyle(fontSize: 16, color: Colors.grey),
                       textAlign: TextAlign.center,
                     ),
@@ -119,7 +119,7 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
             }),
             const SizedBox(height: 10),
             SizedBox(
-              height: 200, // Ukuran tetap untuk daftar horizontal
+              height: 250, // Ukuran tetap untuk daftar horizontal
               child: productProvider.isLoading
                   ? const Center(child: LoadingIndicator())
                   : productProvider.products.isEmpty
@@ -145,7 +145,7 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
             }),
             const SizedBox(height: 10),
             SizedBox(
-              height: 200, // Ukuran tetap untuk daftar horizontal
+              height: 225, // Ukuran tetap untuk daftar horizontal
               child: eventProvider.isLoading
                   ? const Center(child: LoadingIndicator())
                   : eventProvider.events.isEmpty

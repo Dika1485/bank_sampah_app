@@ -23,6 +23,9 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _passwordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
 
+  // Tambahkan state baru untuk mengontrol visibilitas password
+  bool _isPasswordVisible = false;
+
   @override
   void dispose() {
     _emailController.dispose();
@@ -54,7 +57,7 @@ class _LoginScreenState extends State<LoginScreen> {
             (Route<dynamic> route) => false, // Remove all previous routes
           );
           // Navigator.of(context).pushReplacement(
-          //   MaterialPageRoute(builder: (_) => const NasabahDashboardScreen()),
+          // 	 MaterialPageRoute(builder: (_) => const NasabahDashboardScreen()),
           // );
         } else if (authProvider.appUser!.validated == false) {
           Navigator.of(context).pushAndRemoveUntil(
@@ -62,7 +65,7 @@ class _LoginScreenState extends State<LoginScreen> {
             (Route<dynamic> route) => false, // Remove all previous routes
           );
           // Navigator.of(context).pushReplacement(
-          //   MaterialPageRoute(builder: (_) => const ProfileScreen()),
+          // 	 MaterialPageRoute(builder: (_) => const ProfileScreen()),
           // );
         } else if (authProvider.appUser!.userType == UserType.direktur) {
           Navigator.of(context).pushAndRemoveUntil(
@@ -72,7 +75,7 @@ class _LoginScreenState extends State<LoginScreen> {
             (Route<dynamic> route) => false, // Remove all previous routes
           );
           // Navigator.of(context).pushReplacement(
-          //   MaterialPageRoute(builder: (_) => const AdminDashboardScreen()),
+          // 	 MaterialPageRoute(builder: (_) => const AdminDashboardScreen()),
           // );
         } else if (authProvider.appUser!.userType == UserType.sekretaris) {
           Navigator.of(context).pushAndRemoveUntil(
@@ -82,7 +85,7 @@ class _LoginScreenState extends State<LoginScreen> {
             (Route<dynamic> route) => false, // Remove all previous routes
           );
           // Navigator.of(context).pushReplacement(
-          //   MaterialPageRoute(builder: (_) => const AdminDashboardScreen()),
+          // 	 MaterialPageRoute(builder: (_) => const AdminDashboardScreen()),
           // );
         } else if (authProvider.appUser!.userType == UserType.bendahara) {
           Navigator.of(context).pushAndRemoveUntil(
@@ -92,7 +95,7 @@ class _LoginScreenState extends State<LoginScreen> {
             (Route<dynamic> route) => false, // Remove all previous routes
           );
           // Navigator.of(context).pushReplacement(
-          //   MaterialPageRoute(builder: (_) => const PengepulDashboardScreen()),
+          // 	 MaterialPageRoute(builder: (_) => const PengepulDashboardScreen()),
           // );
         } else if (authProvider.appUser!.userType == UserType.edukasi) {
           Navigator.of(context).pushAndRemoveUntil(
@@ -102,7 +105,7 @@ class _LoginScreenState extends State<LoginScreen> {
             (Route<dynamic> route) => false, // Remove all previous routes
           );
           // Navigator.of(context).pushReplacement(
-          //   MaterialPageRoute(builder: (_) => const EdukasiDashboardScreen()),
+          // 	 MaterialPageRoute(builder: (_) => const EdukasiDashboardScreen()),
           // );
         } else if (authProvider.appUser!.userType == UserType.produksi) {
           Navigator.of(context).pushAndRemoveUntil(
@@ -112,7 +115,7 @@ class _LoginScreenState extends State<LoginScreen> {
             (Route<dynamic> route) => false, // Remove all previous routes
           );
           // Navigator.of(context).pushReplacement(
-          //   MaterialPageRoute(builder: (_) => const ProduksiDashboardScreen()),
+          // 	 MaterialPageRoute(builder: (_) => const ProduksiDashboardScreen()),
           // );
         }
       }
@@ -151,11 +154,28 @@ class _LoginScreenState extends State<LoginScreen> {
                 const SizedBox(height: 16.0),
                 TextFormField(
                   controller: _passwordController,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
+                    // Ubah dari const InputDecoration
                     labelText: 'Password',
-                    border: OutlineInputBorder(),
+                    border: const OutlineInputBorder(),
+                    // Tambahkan IconButton di akhir TextField
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        // Pilih ikon berdasarkan state visibilitas
+                        _isPasswordVisible
+                            ? Icons.visibility
+                            : Icons.visibility_off,
+                      ),
+                      onPressed: () {
+                        // Toggle state visibilitas saat tombol ditekan
+                        setState(() {
+                          _isPasswordVisible = !_isPasswordVisible;
+                        });
+                      },
+                    ),
                   ),
-                  obscureText: true,
+                  // Tentukan apakah password harus disembunyikan
+                  obscureText: !_isPasswordVisible,
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return 'Password tidak boleh kosong';

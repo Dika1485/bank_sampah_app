@@ -141,7 +141,7 @@ class TransactionProvider with ChangeNotifier {
               return Transaction(
                 id: doc.id,
                 userId: '',
-                pengepulId: 'bendahara',
+                pengepulId: data['pengepulId'] ?? '',
                 type: _mapSalesType(data['type']),
                 sampahTypeId: '',
                 sampahTypeName: data['type'] == 'penjualan_sampah'
