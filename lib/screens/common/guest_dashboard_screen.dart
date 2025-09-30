@@ -119,7 +119,7 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
             }),
             const SizedBox(height: 10),
             SizedBox(
-              height: 250, // Ukuran tetap untuk daftar horizontal
+              height: 240, // Ukuran tetap untuk daftar horizontal
               child: productProvider.isLoading
                   ? const Center(child: LoadingIndicator())
                   : productProvider.products.isEmpty
@@ -145,7 +145,7 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
             }),
             const SizedBox(height: 10),
             SizedBox(
-              height: 225, // Ukuran tetap untuk daftar horizontal
+              height: 215, // Ukuran tetap untuk daftar horizontal
               child: eventProvider.isLoading
                   ? const Center(child: LoadingIndicator())
                   : eventProvider.events.isEmpty

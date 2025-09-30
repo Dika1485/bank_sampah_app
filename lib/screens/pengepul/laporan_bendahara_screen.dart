@@ -1,3 +1,4 @@
+import 'package:bank_sampah_app/providers/bank_balance_provider.dart';
 import 'package:bank_sampah_app/utils/pdf_generator.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -74,6 +75,10 @@ class _LaporanBendaharaScreenState extends State<LaporanBendaharaScreen> {
       context,
       listen: false,
     );
+    final bankBalanceProvider = Provider.of<BankBalanceProvider>(
+      context,
+      listen: false,
+    );
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
     if (authProvider.appUser == null) {
@@ -87,6 +92,7 @@ class _LaporanBendaharaScreenState extends State<LaporanBendaharaScreen> {
     final allTransactions = transactionProvider.allTransactions;
     // Mengambil semua data pengguna (user) untuk lookup nama
     final allUsers = authProvider.allUsers;
+    final double totalRevenue = bankBalanceProvider.totalRevenue;
 
     final filteredTransactions = DateFilterUtil.filterTransactionsByPeriod(
       allTransactions,
@@ -101,7 +107,8 @@ class _LaporanBendaharaScreenState extends State<LaporanBendaharaScreen> {
     await PdfGenerator.generateBendaharaReport(
       bendahara: authProvider.appUser!,
       allTransactions: filteredTransactions,
-      allUsers: allUsers, // Memasukkan daftar semua user
+      allUsers: allUsers,
+      totalRevenue: totalRevenue, // Mengirimkan saldo kas bank sampah
       period: period,
     );
 
@@ -117,6 +124,8 @@ class _LaporanBendaharaScreenState extends State<LaporanBendaharaScreen> {
     // Listen ke kedua provider untuk state loading dan data terbaru
     final transactionProvider = Provider.of<TransactionProvider>(context);
     final authProvider = Provider.of<AuthProvider>(context);
+    final bankBalanceProvider = Provider.of<BankBalanceProvider>(context);
+    final double totalRevenue = bankBalanceProvider.totalRevenue;
 
     // Data ringkasan untuk tampilan dashboard
     final Map<String, dynamic> summary = DateFilterUtil.calculateSummary(
@@ -147,7 +156,7 @@ class _LaporanBendaharaScreenState extends State<LaporanBendaharaScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      'Ringkasan Transaksi',
+                      'Ringkasan Keuangan Bank Sampah',
                       style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
@@ -155,6 +164,15 @@ class _LaporanBendaharaScreenState extends State<LaporanBendaharaScreen> {
                     ),
                     const SizedBox(height: 16),
                     // Tampilan kartu ringkasan
+                    _buildSummaryCard(
+                      title: 'Saldo Kas Bank Sampah Saat Ini',
+                      value: NumberFormat.currency(
+                        locale: 'id_ID',
+                        symbol: 'Rp ',
+                        decimalDigits: 0,
+                      ).format(totalRevenue),
+                      color: Colors.blue.shade700,
+                    ),
                     _buildSummaryCard(
                       title: 'Total Setoran Sampah',
                       value: NumberFormat.currency(

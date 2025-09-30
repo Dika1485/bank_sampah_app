@@ -1,3 +1,4 @@
+import 'package:bank_sampah_app/providers/auth_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:bank_sampah_app/providers/transaction_provider.dart';
@@ -40,6 +41,8 @@ class _SellWasteScreenState extends State<SellWasteScreen> {
   }
 
   Future<void> _sellWaste() async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final String? currentPengepulId = authProvider.appUser?.id;
     if (_formKey.currentState!.validate()) {
       setState(() {
         _isLoading = true;
@@ -67,11 +70,15 @@ class _SellWasteScreenState extends State<SellWasteScreen> {
           throw Exception('Total harga harus lebih dari Rp 0.');
         }
 
+        if (currentPengepulId == null || currentPengepulId.isEmpty) {
+          throw Exception('ID Pengepul tidak ditemukan. Mohon login ulang.');
+        }
+
         // Panggil fungsi sellWaste dari TransactionProvider
         await Provider.of<TransactionProvider>(
           context,
           listen: false,
-        ).sellWaste(soldWaste, totalRevenue);
+        ).sellWaste(soldWaste, totalRevenue, currentPengepulId);
 
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Penjualan berhasil dicatat!')),

@@ -138,38 +138,44 @@ class PdfGenerator {
   }
 
   // --- Fungsi generateBendaharaReport (Direvisi) ---
+  // --- Fungsi generateBendaharaReport (Direvisi Total) ---
   static Future<void> generateBendaharaReport({
     required AppUser bendahara,
     required List<Transaction> allTransactions,
     // Parameter baru yang diperlukan untuk lookup nama
     required List<AppUser> allUsers,
+    required double totalRevenue,
     String? period,
   }) async {
     final pdf = pw.Document();
-    final generator =
-        PdfGenerator(); // Inisialisasi untuk memanggil fungsi _getUserName
+    final generator = PdfGenerator();
 
-    // 1. Filter: Hanya ambil transaksi Setoran Sampah dan Pencairan Dana yang sudah completed
-    final nasabahTransactions = allTransactions
-        .where(
-          (t) =>
-              (t.type == TransactionType.setoran ||
-                  t.type == TransactionType.pencairan) &&
-              t.status == TransactionStatus.completed,
-        )
+    // REVISI 1: Hapus filter jenis transaksi. Hanya filter status completed.
+    final completedTransactions = allTransactions
+        .where((t) => t.status == TransactionStatus.completed)
         .toList();
 
-    // 2. Hitung ringkasan transaksi nasabah
+    // 2. Hitung ringkasan transaksi
     final Map<String, double> summary = {
-      'totalSetoran': 0.0,
-      'totalPencairan': 0.0,
+      'totalSetoranNasabah': 0.0,
+      'totalPencairanNasabah': 0.0,
+      'totalPenjualanSampah': 0.0, // Tambah variabel ringkasan
+      'totalPenjualanProduk': 0.0, // Tambah variabel ringkasan
     };
 
-    nasabahTransactions.forEach((t) {
+    completedTransactions.forEach((t) {
       if (t.type == TransactionType.setoran) {
-        summary['totalSetoran'] = (summary['totalSetoran']! + t.amount);
+        summary['totalSetoranNasabah'] =
+            (summary['totalSetoranNasabah']! + t.amount);
       } else if (t.type == TransactionType.pencairan) {
-        summary['totalPencairan'] = (summary['totalPencairan']! + t.amount);
+        summary['totalPencairanNasabah'] =
+            (summary['totalPencairanNasabah']! + t.amount);
+      } else if (t.type == TransactionType.jualsampah) {
+        summary['totalPenjualanSampah'] =
+            (summary['totalPenjualanSampah']! + t.amount);
+      } else if (t.type == TransactionType.produk) {
+        summary['totalPenjualanProduk'] =
+            (summary['totalPenjualanProduk']! + t.amount);
       }
     });
 
@@ -178,9 +184,10 @@ class PdfGenerator {
         pageFormat: PdfPageFormat.a4,
         build: (pw.Context context) {
           return [
+            // ... (Bagian Header Sama) ...
             pw.Center(
               child: pw.Text(
-                'Laporan Transaksi Nasabah Bank Sampah${period != null ? ' ($period)' : ''}',
+                'Laporan Keuangan Bank Sampah Lengkap${period != null ? ' ($period)' : ''}',
                 style: pw.TextStyle(
                   fontSize: 24,
                   fontWeight: pw.FontWeight.bold,
@@ -195,51 +202,109 @@ class PdfGenerator {
             pw.SizedBox(height: 10),
             pw.Divider(),
             pw.SizedBox(height: 10),
+
+            // --- PENAMBAHAN SALDO KAS BANK SAMPAH (totalRevenue) ---
             pw.Text(
-              'Ringkasan Transaksi Nasabah:',
-              style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold),
-            ),
-            pw.SizedBox(height: 10),
-            // Tampilkan Setoran dan Pencairan
-            pw.Table.fromTextArray(
-              data: [
-                [
-                  'Total Setoran Sampah',
-                  'Rp ${NumberFormat('#,##0', 'id_ID').format(summary['totalSetoran'])}',
-                ],
-                [
-                  'Total Pencairan Dana',
-                  'Rp ${NumberFormat('#,##0', 'id_ID').format(summary['totalPencairan'])}',
-                ],
-              ],
-              cellAlignment: pw.Alignment.centerLeft,
-              cellPadding: const pw.EdgeInsets.all(5),
+              'Saldo Kas Bank Sampah Saat Ini: Rp ${NumberFormat('#,##0', 'id_ID').format(totalRevenue)}',
+              style: pw.TextStyle(
+                fontSize: 18,
+                fontWeight: pw.FontWeight.bold,
+                color: PdfColors.blue800,
+              ),
             ),
             pw.SizedBox(height: 20),
+
+            // --- Ringkasan Transaksi Periodik (Dibuat 2 Kolom untuk fix error) ---
             pw.Text(
-              'Riwayat Transaksi Rinci Nasabah:',
+              'Ringkasan Transaksi Periodik:',
               style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold),
             ),
             pw.SizedBox(height: 10),
-            if (nasabahTransactions.isEmpty)
-              pw.Text('Belum ada riwayat transaksi nasabah yang relevan.')
+            pw.Table.fromTextArray(
+              // Header opsional untuk 2 kolom:
+              headers: ['Deskripsi', 'Nominal'],
+              data: [
+                // Pendapatan Kas Bank Sampah
+                [
+                  'Total Penjualan Sampah (ke Pabrik)',
+                  'Rp ${NumberFormat('#,##0', 'id_ID').format(summary['totalPenjualanSampah'])}',
+                ],
+                [
+                  'Total Penjualan Produk',
+                  'Rp ${NumberFormat('#,##0', 'id_ID').format(summary['totalPenjualanProduk'])}',
+                ],
+                // Transaksi Nasabah
+                [
+                  'Total Nilai Setoran Nasabah',
+                  'Rp ${NumberFormat('#,##0', 'id_ID').format(summary['totalSetoranNasabah'])}',
+                ],
+                [
+                  'Total Pencairan Dana Nasabah',
+                  'Rp ${NumberFormat('#,##0', 'id_ID').format(summary['totalPencairanNasabah'])}',
+                ],
+              ],
+              headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+              cellAlignment: pw.Alignment.centerLeft,
+              cellPadding: const pw.EdgeInsets.all(5),
+              cellStyle: const pw.TextStyle(fontSize: 12),
+              border: pw.TableBorder.all(color: PdfColors.grey),
+            ),
+            pw.SizedBox(height: 20),
+
+            // --- Riwayat Transaksi Rinci ---
+            pw.Text(
+              'Riwayat Transaksi Rinci:',
+              style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold),
+            ),
+            pw.SizedBox(height: 10),
+            if (completedTransactions.isEmpty)
+              pw.Text('Belum ada riwayat transaksi yang selesai.')
             else
               pw.Table.fromTextArray(
                 headers: [
                   'Tanggal',
                   'Jenis Transaksi',
-                  'Nama Nasabah', // Header diubah ke Nama Nasabah
+                  'Keterangan', // Diganti Keterangan
+                  'Pihak Terkait', // Diganti Pihak Terkait
                   'Nominal (Rp)',
-                  'Status',
                 ],
-                data: nasabahTransactions.map((t) {
+                data: completedTransactions.map((t) {
+                  String pihakTerkait = '';
+                  String keterangan =
+                      t.sampahTypeName; // Default dari Sampah/Produk Name
+
+                  if (t.type == TransactionType.setoran ||
+                      t.type == TransactionType.pencairan) {
+                    // Jika transaksi nasabah, gunakan nama nasabah sebagai Pihak Terkait
+                    pihakTerkait = generator._getUserName(t.userId, allUsers);
+                  } else if (t.type == TransactionType.jualsampah) {
+                    // Jika penjualan sampah ke pabrik
+                    pihakTerkait =
+                        'Penjual (${generator._getUserName(t.pengepulId!, allUsers)})';
+                    keterangan =
+                        'Jual ${t.weightKg.toStringAsFixed(2)} kg Sampah';
+                  } else if (t.type == TransactionType.produk) {
+                    // Jika penjualan produk
+                    pihakTerkait =
+                        'Penjual (${generator._getUserName(t.pengepulId!, allUsers)})';
+                    keterangan =
+                        'Penjualan Produk: ${t.sampahTypeName}'; // SampahTypeName berisi nama produk
+                  }
+
                   return [
                     DateFormat('dd-MM-yyyy HH:mm').format(t.timestamp),
                     _getTransactionTypeLabel(t.type),
-                    // Menggunakan lookup function
-                    generator._getUserName(t.userId, allUsers),
-                    NumberFormat('#,##0', 'id_ID').format(t.amount),
-                    t.status.toString().split('.').last.toUpperCase(),
+                    keterangan,
+                    pihakTerkait,
+                    // Tampilkan nominal dengan warna berdasarkan jenis transaksi (opsional, tapi bagus)
+                    pw.Text(
+                      'Rp ${NumberFormat('#,##0', 'id_ID').format(t.amount)}',
+                      style: pw.TextStyle(
+                        color: t.type == TransactionType.pencairan
+                            ? PdfColors.red
+                            : PdfColors.black,
+                      ),
+                    ),
                   ];
                 }).toList(),
                 border: pw.TableBorder.all(color: PdfColors.black),
@@ -247,6 +312,7 @@ class PdfGenerator {
                 cellAlignment: pw.Alignment.centerLeft,
                 cellPadding: const pw.EdgeInsets.all(5),
               ),
+            // ... (Bagian Footer Sama) ...
             pw.SizedBox(height: 20),
             pw.Align(
               alignment: pw.Alignment.bottomRight,
@@ -261,7 +327,7 @@ class PdfGenerator {
 
     final output = await getTemporaryDirectory();
     final file = File(
-      '${output.path}/laporan_bendahara_${bendahara.nama.replaceAll(' ', '_')}_${DateFormat('yyyyMMdd_HHmm').format(DateTime.now())}.pdf',
+      '${output.path}/laporan_bendahara_lengkap_${bendahara.nama.replaceAll(' ', '_')}_${DateFormat('yyyyMMdd_HHmm').format(DateTime.now())}.pdf',
     );
     await file.writeAsBytes(await pdf.save());
     await OpenFilex.open(file.path);

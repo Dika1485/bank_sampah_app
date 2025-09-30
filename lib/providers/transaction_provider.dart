@@ -220,6 +220,7 @@ class TransactionProvider with ChangeNotifier {
   Future<void> sellWaste(
     Map<String, double> soldWaste,
     double totalRevenue,
+    String pengepulId,
   ) async {
     _isLoading = true;
     _errorMessage = null;
@@ -285,6 +286,7 @@ class TransactionProvider with ChangeNotifier {
           'waste_data': soldWaste,
           'revenue': totalRevenue,
           'type': 'penjualan_sampah',
+          'pengepulId': pengepulId,
         });
       });
 
@@ -299,7 +301,11 @@ class TransactionProvider with ChangeNotifier {
     }
   }
 
-  Future<void> sellProduct(Product product, int quantitySold) async {
+  Future<void> sellProduct(
+    Product product,
+    int quantitySold,
+    String pengepulId,
+  ) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
@@ -358,6 +364,7 @@ class TransactionProvider with ChangeNotifier {
           'quantity': quantitySold,
           'revenue': totalRevenue,
           'type': 'penjualan_produk',
+          'pengepulId': pengepulId,
         });
       });
 

@@ -1,3 +1,4 @@
+import 'package:bank_sampah_app/providers/auth_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:bank_sampah_app/providers/products_provider.dart';
@@ -241,6 +242,12 @@ class _ManageProductsScreenState extends State<ManageProductsScreen> {
                       : () async {
                           final quantitySold =
                               int.tryParse(quantityController.text) ?? 0;
+                          final authProvider = Provider.of<AuthProvider>(
+                            context,
+                            listen: false,
+                          );
+                          final String? currentPengepulId =
+                              authProvider.appUser?.id;
 
                           if (quantitySold > 0 &&
                               quantitySold <= product.stock) {
@@ -251,6 +258,7 @@ class _ManageProductsScreenState extends State<ManageProductsScreen> {
                             await transactionProvider.sellProduct(
                               product,
                               quantitySold,
+                              currentPengepulId!,
                             );
 
                             if (transactionProvider.errorMessage != null) {
