@@ -226,7 +226,7 @@ class PdfGenerator {
               data: [
                 // Pendapatan Kas Bank Sampah
                 [
-                  'Total Penjualan Sampah (ke Pabrik)',
+                  'Total Penjualan Sampah',
                   'Rp ${NumberFormat('#,##0', 'id_ID').format(summary['totalPenjualanSampah'])}',
                 ],
                 [
