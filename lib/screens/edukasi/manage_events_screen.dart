@@ -158,10 +158,12 @@ class _ManageEventsPageState extends State<ManageEventsPage> {
     showDialog(
       context: context,
       builder: (context) {
-        // State lokal untuk gambar
+        // State lokal untuk gambar dan validasi
         File? pickedImage = event?.imageUrl != null ? null : null;
         String? existingImageUrl = event?.imageUrl;
         bool isUploading = false;
+        // 💡 Tambahkan GlobalKey untuk Form
+        final formKey = GlobalKey<FormState>();
 
         return StatefulBuilder(
           builder: (context, setStateInDialog) {
@@ -220,106 +222,138 @@ class _ManageEventsPageState extends State<ManageEventsPage> {
             return AlertDialog(
               title: Text(event == null ? 'Tambah Acara Baru' : 'Edit Acara'),
               content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // 💡 Bagian Gambar
-                    imagePreview,
-                    const SizedBox(height: 8),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        TextButton.icon(
-                          onPressed: isUploading
-                              ? null
-                              : pickImageForDialog, // Disable saat upload
-                          icon: const Icon(Icons.photo_library),
-                          label: Text(
-                            event != null
-                                ? 'Ganti Foto'
-                                : 'Pilih Foto (Opsional)',
-                          ),
-                        ),
-                        if (pickedImage != null || existingImageUrl != null)
+                // 💡 Bungkus dengan Form
+                child: Form(
+                  key: formKey,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Bagian Gambar
+                      imagePreview,
+                      const SizedBox(height: 8),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
                           TextButton.icon(
                             onPressed: isUploading
                                 ? null
-                                : () {
-                                    // Disable saat upload
-                                    setStateInDialog(() {
-                                      pickedImage = null;
-                                      existingImageUrl =
-                                          null; // Hapus URL lama/gambar baru
-                                    });
-                                  },
-                            icon: const Icon(Icons.clear, color: Colors.red),
-                            label: const Text(
-                              'Hapus Foto',
-                              style: TextStyle(color: Colors.red),
+                                : pickImageForDialog, // Disable saat upload
+                            icon: const Icon(Icons.photo_library),
+                            label: Text(
+                              event != null
+                                  ? 'Ganti Foto'
+                                  : 'Pilih Foto (Opsional)',
                             ),
                           ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    // Bagian Input Teks
-                    TextField(
-                      controller: titleController,
-                      decoration: const InputDecoration(
-                        labelText: 'Judul Acara',
+                          if (pickedImage != null || existingImageUrl != null)
+                            TextButton.icon(
+                              onPressed: isUploading
+                                  ? null
+                                  : () {
+                                      // Disable saat upload
+                                      setStateInDialog(() {
+                                        pickedImage = null;
+                                        existingImageUrl =
+                                            null; // Hapus URL lama/gambar baru
+                                      });
+                                    },
+                              icon: const Icon(Icons.clear, color: Colors.red),
+                              label: const Text(
+                                'Hapus Foto',
+                                style: TextStyle(color: Colors.red),
+                              ),
+                            ),
+                        ],
                       ),
-                    ),
-                    TextField(
-                      controller: descriptionController,
-                      decoration: const InputDecoration(labelText: 'Deskripsi'),
-                      maxLines: 3,
-                    ),
-                    const SizedBox(height: 16),
-                    // Bagian Tanggal & Waktu
-                    ListTile(
-                      title: Text(
-                        selectedDate == null
-                            ? 'Pilih Tanggal'
-                            : 'Tanggal: ${selectedDate!.day}/${selectedDate!.month}/${selectedDate!.year}',
+                      const SizedBox(height: 16),
+                      // 💡 Ganti TextField dengan TextFormField + Validator
+                      TextFormField(
+                        controller: titleController,
+                        decoration: const InputDecoration(
+                          labelText: 'Judul Acara', // Tanda  untuk wajib
+                          border: OutlineInputBorder(),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return 'Judul acara wajib diisi.';
+                          }
+                          return null;
+                        },
                       ),
-                      trailing: const Icon(Icons.calendar_today),
-                      onTap: () async {
-                        final date = await showDatePicker(
-                          context: context,
-                          initialDate: selectedDate ?? DateTime.now(),
-                          firstDate: DateTime.now(),
-                          lastDate: DateTime(2030),
-                        );
-                        if (date != null) {
-                          setStateInDialog(() => selectedDate = date);
-                        }
-                      },
-                    ),
-                    ListTile(
-                      title: Text(
-                        selectedTime == null
-                            ? 'Pilih Waktu'
-                            : 'Waktu: ${selectedTime!.hour}:${selectedTime!.minute.toString().padLeft(2, '0')}',
+                      const SizedBox(height: 16),
+                      // 💡 Ganti TextField dengan TextFormField + Validator
+                      TextFormField(
+                        controller: descriptionController,
+                        decoration: const InputDecoration(
+                          labelText: 'Deskripsi', // Tanda  untuk wajib
+                          border: OutlineInputBorder(),
+                        ),
+                        maxLines: 3,
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return 'Deskripsi wajib diisi.';
+                          }
+                          return null;
+                        },
                       ),
-                      trailing: const Icon(Icons.access_time),
-                      onTap: () async {
-                        final time = await showTimePicker(
-                          context: context,
-                          initialTime: selectedTime ?? TimeOfDay.now(),
-                          builder: (context, child) {
-                            return MediaQuery(
-                              data: MediaQuery.of(
-                                context,
-                              ).copyWith(alwaysUse24HourFormat: true),
-                              child: child!,
-                            );
-                          },
-                        );
-                        if (time != null) {
-                          setStateInDialog(() => selectedTime = time);
-                        }
-                      },
-                    ),
-                  ],
+                      const SizedBox(height: 16),
+                      // 💡 Tambahkan Validasi Visual untuk Tanggal & Waktu
+                      ListTile(
+                        title: Text(
+                          selectedDate == null
+                              ? 'Pilih Tanggal'
+                              : 'Tanggal: ${selectedDate!.day}/${selectedDate!.month}/${selectedDate!.year}',
+                        ),
+                        trailing: const Icon(Icons.calendar_today),
+                        onTap: () async {
+                          final date = await showDatePicker(
+                            context: context,
+                            initialDate: selectedDate ?? DateTime.now(),
+                            firstDate: DateTime.now(),
+                            lastDate: DateTime(2030),
+                          );
+                          if (date != null) {
+                            setStateInDialog(() => selectedDate = date);
+                          }
+                        },
+                      ),
+                      ListTile(
+                        title: Text(
+                          selectedTime == null
+                              ? 'Pilih Waktu'
+                              : 'Waktu: ${selectedTime!.hour}:${selectedTime!.minute.toString().padLeft(2, '0')}',
+                        ),
+                        trailing: const Icon(Icons.access_time),
+                        onTap: () async {
+                          final time = await showTimePicker(
+                            context: context,
+                            initialTime: selectedTime ?? TimeOfDay.now(),
+                            builder: (context, child) {
+                              return MediaQuery(
+                                data: MediaQuery.of(
+                                  context,
+                                ).copyWith(alwaysUse24HourFormat: true),
+                                child: child!,
+                              );
+                            },
+                          );
+                          if (time != null) {
+                            setStateInDialog(() => selectedTime = time);
+                          }
+                        },
+                      ),
+                      // 💡 Tambahkan pesan error jika tanggal/waktu kosong (setelah validasi form gagal)
+                      if (formKey.currentState?.validate() == false &&
+                          (selectedDate == null || selectedTime == null))
+                        const Padding(
+                          padding: EdgeInsets.only(top: 8.0),
+                          child: Text(
+                            'Tanggal dan Waktu wajib diisi.',
+                            style: TextStyle(color: Colors.red, fontSize: 12),
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
               ),
               actions: [
@@ -331,10 +365,8 @@ class _ManageEventsPageState extends State<ManageEventsPage> {
                   onPressed: isUploading
                       ? null
                       : () async {
-                          // Disable saat upload
-                          // 💡 Logika Save (Tambah/Edit)
-                          if (titleController.text.isNotEmpty &&
-                              descriptionController.text.isNotEmpty &&
+                          // 💡 Periksa validasi Form + Tanggal/Waktu
+                          if (formKey.currentState!.validate() &&
                               selectedDate != null &&
                               selectedTime != null) {
                             // 1. Gabungkan Tanggal & Waktu
@@ -382,7 +414,7 @@ class _ManageEventsPageState extends State<ManageEventsPage> {
                             } else if (existingImageUrl == null &&
                                 pickedImage == null &&
                                 event?.imageUrl != null) {
-                              // Kasus: User menghapus gambar yang sudah ada (existingImageUrl menjadi null)
+                              // Kasus: User menghapus gambar yang sudah ada
                               finalImageUrl = null;
                             }
 
@@ -390,8 +422,10 @@ class _ManageEventsPageState extends State<ManageEventsPage> {
                             if (event == null) {
                               final newEvent = Event(
                                 id: '',
-                                title: titleController.text,
-                                description: descriptionController.text,
+                                title: titleController.text
+                                    .trim(), // Pastikan di-trim
+                                description: descriptionController.text
+                                    .trim(), // Pastikan di-trim
                                 dateTime: newDateTime,
                                 imageUrl:
                                     finalImageUrl, // Simpan URL gambar (atau null)
@@ -400,8 +434,10 @@ class _ManageEventsPageState extends State<ManageEventsPage> {
                             } else {
                               final updatedEvent = Event(
                                 id: event.id,
-                                title: titleController.text,
-                                description: descriptionController.text,
+                                title: titleController.text
+                                    .trim(), // Pastikan di-trim
+                                description: descriptionController.text
+                                    .trim(), // Pastikan di-trim
                                 dateTime: newDateTime,
                                 imageUrl:
                                     finalImageUrl, // Simpan URL gambar (atau null)
@@ -412,17 +448,20 @@ class _ManageEventsPageState extends State<ManageEventsPage> {
                             if (context.mounted) {
                               Navigator.pop(context); // Tutup dialog
                             }
-                          } else {
-                            // Tampilkan pesan error jika ada field wajib yang kosong
+                          } else if (selectedDate == null ||
+                              selectedTime == null) {
+                            // Tampilkan pesan error jika Tanggal/Waktu kosong setelah form teks valid
                             if (context.mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
                                   content: Text(
-                                    'Judul, Deskripsi, Tanggal, dan Waktu wajib diisi!',
+                                    'Tanggal dan Waktu wajib diisi!',
                                   ),
                                 ),
                               );
                             }
+                            // 💡 Trigger setStateInDialog untuk memperbarui UI (misal: warna merah di ListTile)
+                            setStateInDialog(() {});
                           }
                         },
                   child: isUploading

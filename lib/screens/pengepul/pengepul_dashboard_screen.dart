@@ -127,7 +127,7 @@ class _PengepulDashboardScreenState extends State<PengepulDashboardScreen> {
 
     // Cek apakah ada data transaksi untuk analisis
     final bool hasTransactionData =
-        transactionProvider.nasabahTransactions.isNotEmpty;
+        transactionProvider.completedSetoranTransactions.isNotEmpty;
 
     return Scaffold(
       appBar: AppBar(
@@ -360,12 +360,14 @@ class _PengepulDashboardScreenState extends State<PengepulDashboardScreen> {
                       children: [
                         // Bar Chart untuk berat sampah per jenis
                         PengepulBarChartWidget(
-                          transactions: transactionProvider.nasabahTransactions,
+                          transactions:
+                              transactionProvider.completedSetoranTransactions,
                         ),
                         const SizedBox(height: 20),
                         // Line Chart untuk berat sampah per bulan
                         PengepulChartWidget(
-                          transactions: transactionProvider.nasabahTransactions,
+                          transactions:
+                              transactionProvider.completedSetoranTransactions,
                         ),
                       ],
                     ),

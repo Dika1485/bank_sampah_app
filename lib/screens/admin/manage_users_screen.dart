@@ -1,5 +1,6 @@
 import 'package:bank_sampah_app/screens/admin/admin_dashboard_screen.dart';
 import 'package:bank_sampah_app/screens/admin/user_validation_screen.dart';
+import 'package:bank_sampah_app/utils/validators.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:bank_sampah_app/models/user.dart';
@@ -16,6 +17,9 @@ class ManageUsersScreen extends StatefulWidget {
 class _ManageUsersScreenState extends State<ManageUsersScreen> {
   // Fungsi untuk menampilkan dialog edit user
   void _showEditUserDialog(BuildContext context, AppUser userToEdit) {
+    // Tambahkan Form Key di sini
+    final _formKey = GlobalKey<FormState>();
+
     final TextEditingController nameController = TextEditingController(
       text: userToEdit.nama,
     );
@@ -33,53 +37,68 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
             return AlertDialog(
               title: const Text('Edit Pengguna'),
               content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    TextField(
-                      controller: nameController,
-                      decoration: const InputDecoration(labelText: 'Nama'),
-                    ),
-                    TextField(
-                      controller: nikController,
-                      decoration: const InputDecoration(labelText: 'NIK'),
-                      keyboardType: TextInputType.number,
-                    ),
-                    DropdownButtonFormField<UserType>(
-                      value: selectedUserType,
-                      decoration: const InputDecoration(
-                        labelText: 'Tipe Pengguna',
+                child: Form(
+                  // <-- Bungkus dengan Form
+                  key: _formKey, // <-- Pasang key
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // --- NAMA ---
+                      TextFormField(
+                        // <-- Ubah menjadi TextFormField
+                        controller: nameController,
+                        decoration: const InputDecoration(labelText: 'Nama'),
+                        // Terapkan validator untuk Nama
+                        validator: (value) =>
+                            AppValidators.validateRequired(value, 'Nama'),
                       ),
-                      items: UserType.values.map((type) {
-                        return DropdownMenuItem(
-                          value: type,
-                          child: Text(
-                            type.toString().split('.').last.toUpperCase(),
-                          ),
-                        );
-                      }).toList(),
-                      onChanged: (UserType? newValue) {
-                        if (newValue != null) {
-                          setDialogState(() {
-                            selectedUserType = newValue;
-                          });
-                        }
-                      },
-                    ),
-                    Row(
-                      children: [
-                        const Text('Validasi Akun:'),
-                        Switch(
-                          value: isValidated,
-                          onChanged: (bool value) {
-                            setDialogState(() {
-                              isValidated = value;
-                            });
-                          },
+                      // --- NIK ---
+                      TextFormField(
+                        // <-- Ubah menjadi TextFormField
+                        controller: nikController,
+                        decoration: const InputDecoration(labelText: 'NIK'),
+                        keyboardType: TextInputType.number,
+                        // Terapkan validator untuk NIK
+                        validator: (value) => AppValidators.validateNIK(value),
+                      ),
+                      // --- TIPE PENGGUNA (DropdownButtonFormField sudah mendukung validasi) ---
+                      DropdownButtonFormField<UserType>(
+                        value: selectedUserType,
+                        decoration: const InputDecoration(
+                          labelText: 'Tipe Pengguna',
                         ),
-                      ],
-                    ),
-                  ],
+                        // ... (Item dan onChanged Anda tetap sama) ...
+                        items: UserType.values.map((type) {
+                          return DropdownMenuItem(
+                            value: type,
+                            child: Text(
+                              type.toString().split('.').last.toUpperCase(),
+                            ),
+                          );
+                        }).toList(),
+                        onChanged: (UserType? newValue) {
+                          if (newValue != null) {
+                            setDialogState(() {
+                              selectedUserType = newValue;
+                            });
+                          }
+                        },
+                      ),
+                      Row(
+                        children: [
+                          const Text('Validasi Akun:'),
+                          Switch(
+                            value: isValidated,
+                            onChanged: (bool value) {
+                              setDialogState(() {
+                                isValidated = value;
+                              });
+                            },
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
               actions: <Widget>[
@@ -91,41 +110,46 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
                 ),
                 ElevatedButton(
                   onPressed: () async {
-                    Navigator.of(dialogContext).pop();
-                    try {
-                      await Provider.of<AuthProvider>(
-                        context,
-                        listen: false,
-                      ).updateUserData(
-                        userId: userToEdit.id,
-                        nama: nameController.text,
-                        nik: nikController.text,
-                        userType: selectedUserType,
-                        validated: isValidated,
-                      );
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              'Akun ${userToEdit.nama} berhasil diperbarui!',
+                    // --- TRIGGER VALIDASI DI SINI ---
+                    if (_formKey.currentState!.validate()) {
+                      Navigator.of(dialogContext).pop();
+                      try {
+                        await Provider.of<AuthProvider>(
+                          context,
+                          listen: false,
+                        ).updateUserData(
+                          userId: userToEdit.id,
+                          nama: nameController.text,
+                          nik: nikController.text,
+                          userType: selectedUserType,
+                          validated: isValidated,
+                        );
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                'Akun ${userToEdit.nama} berhasil diperbarui!',
+                              ),
+                              backgroundColor: Colors.green,
                             ),
-                            backgroundColor: Colors.green,
-                          ),
-                        );
+                          );
+                        }
+                      } catch (e) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Gagal memperbarui akun: $e'),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                        }
+                        debugPrint('Error updating user: $e');
                       }
-                    } catch (e) {
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('Gagal memperbarui akun: $e'),
-                            backgroundColor: Colors.red,
-                          ),
-                        );
-                      }
-                      debugPrint('Error updating user: $e');
                     }
                   },
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                  ),
                   child: const Text(
                     'Simpan',
                     style: TextStyle(color: Colors.white),

@@ -16,6 +16,9 @@ class ManageProductsScreen extends StatefulWidget {
 }
 
 class _ManageProductsScreenState extends State<ManageProductsScreen> {
+  // GlobalKey untuk Form di dialog Tambah/Edit
+  final _formKey = GlobalKey<FormState>();
+
   @override
   void initState() {
     super.initState();
@@ -204,7 +207,9 @@ class _ManageProductsScreenState extends State<ManageProductsScreen> {
       text: product?.description,
     );
     final priceController = TextEditingController(
-      text: product?.price.toString(),
+      text: product?.price.toStringAsFixed(
+        0,
+      ), // Gunakan toStringAsFixed(0) untuk harga
     );
     final stockController = TextEditingController(
       text: product?.stock.toString(),
@@ -229,119 +234,165 @@ class _ManageProductsScreenState extends State<ManageProductsScreen> {
                 product == null ? 'Tambah Produk Baru' : 'Edit Produk',
               ),
               content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // BAGIAN UPLOAD GAMBAR
-                    GestureDetector(
-                      onTap: () async {
-                        final picker = ImagePicker();
-                        final pickedFile = await picker.pickImage(
-                          source: ImageSource.gallery,
-                        );
+                child: Form(
+                  key: _formKey, // <-- GlobalKey ditambahkan di sini
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // BAGIAN UPLOAD GAMBAR (Tidak Berubah)
+                      GestureDetector(
+                        onTap: () async {
+                          final picker = ImagePicker();
+                          final pickedFile = await picker.pickImage(
+                            source: ImageSource.gallery,
+                          );
 
-                        if (pickedFile != null) {
-                          setDialogState(() {
-                            pickedImage = File(pickedFile.path);
-                            existingImageUrl =
-                                null; // Hapus URL lama jika memilih gambar baru
-                          });
-                        }
-                      },
-                      child: Container(
-                        height: 100,
-                        width: 100,
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Colors.grey),
-                          borderRadius: BorderRadius.circular(8),
-                          color: Colors.grey.shade200,
-                        ),
-                        child: pickedImage != null
-                            ? ClipRRect(
-                                borderRadius: BorderRadius.circular(8),
-                                child: Image.file(
-                                  pickedImage!,
-                                  fit: BoxFit.cover,
-                                ),
-                              )
-                            : existingImageUrl != null
-                            ? ClipRRect(
-                                borderRadius: BorderRadius.circular(8),
-                                child: Image.network(
-                                  existingImageUrl!,
-                                  fit: BoxFit.cover,
-                                ),
-                              )
-                            : const Icon(
-                                Icons.camera_alt,
-                                color: Colors.grey,
-                                size: 40,
-                              ),
-                      ),
-                    ),
-                    const SizedBox(height: 5),
-                    TextButton.icon(
-                      onPressed: () async {
-                        final picker = ImagePicker();
-                        final pickedFile = await picker.pickImage(
-                          source: ImageSource.gallery,
-                        );
-
-                        if (pickedFile != null) {
-                          setDialogState(() {
-                            pickedImage = File(pickedFile.path);
-                            existingImageUrl = null;
-                          });
-                        }
-                      },
-                      icon: const Icon(Icons.upload),
-                      label: Text(
-                        pickedImage != null
-                            ? 'Ubah Gambar'
-                            : existingImageUrl != null
-                            ? 'Ubah Gambar'
-                            : 'Pilih Gambar (Opsional)',
-                      ),
-                    ),
-                    if (existingImageUrl != null || pickedImage != null)
-                      TextButton(
-                        onPressed: () {
-                          setDialogState(() {
-                            pickedImage = null;
-                            existingImageUrl = null;
-                          });
+                          if (pickedFile != null) {
+                            setDialogState(() {
+                              pickedImage = File(pickedFile.path);
+                              existingImageUrl =
+                                  null; // Hapus URL lama jika memilih gambar baru
+                            });
+                          }
                         },
-                        child: const Text(
-                          'Hapus Gambar',
-                          style: TextStyle(color: Colors.red),
+                        child: Container(
+                          height: 100,
+                          width: 100,
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.grey),
+                            borderRadius: BorderRadius.circular(8),
+                            color: Colors.grey.shade200,
+                          ),
+                          child: pickedImage != null
+                              ? ClipRRect(
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: Image.file(
+                                    pickedImage!,
+                                    fit: BoxFit.cover,
+                                  ),
+                                )
+                              : existingImageUrl != null
+                              ? ClipRRect(
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: Image.network(
+                                    existingImageUrl!,
+                                    fit: BoxFit.cover,
+                                  ),
+                                )
+                              : const Icon(
+                                  Icons.camera_alt,
+                                  color: Colors.grey,
+                                  size: 40,
+                                ),
                         ),
                       ),
-                    const SizedBox(height: 10),
-                    // BAGIAN INPUT TEKS
-                    TextField(
-                      controller: nameController,
-                      decoration: const InputDecoration(
-                        labelText: 'Nama Produk',
+                      const SizedBox(height: 5),
+                      TextButton.icon(
+                        onPressed: () async {
+                          final picker = ImagePicker();
+                          final pickedFile = await picker.pickImage(
+                            source: ImageSource.gallery,
+                          );
+
+                          if (pickedFile != null) {
+                            setDialogState(() {
+                              pickedImage = File(pickedFile.path);
+                              existingImageUrl = null;
+                            });
+                          }
+                        },
+                        icon: const Icon(Icons.upload),
+                        label: Text(
+                          pickedImage != null
+                              ? 'Ubah Gambar'
+                              : existingImageUrl != null
+                              ? 'Ubah Gambar'
+                              : 'Pilih Gambar (Opsional)',
+                        ),
                       ),
-                    ),
-                    TextField(
-                      controller: descriptionController,
-                      decoration: const InputDecoration(labelText: 'Deskripsi'),
-                      maxLines: 3,
-                    ),
-                    TextField(
-                      controller: priceController,
-                      decoration: const InputDecoration(labelText: 'Harga'),
-                      keyboardType: TextInputType.number,
-                    ),
-                    TextField(
-                      controller: stockController,
-                      decoration: const InputDecoration(
-                        labelText: 'Stok Tersedia',
+                      if (existingImageUrl != null || pickedImage != null)
+                        TextButton(
+                          onPressed: () {
+                            setDialogState(() {
+                              pickedImage = null;
+                              existingImageUrl = null;
+                            });
+                          },
+                          child: const Text(
+                            'Hapus Gambar',
+                            style: TextStyle(color: Colors.red),
+                          ),
+                        ),
+                      const SizedBox(height: 10),
+                      // BAGIAN INPUT TEKS (Menggunakan TextFormField dengan validator)
+                      TextFormField(
+                        controller: nameController,
+                        decoration: const InputDecoration(
+                          labelText: 'Nama Produk',
+                          border: OutlineInputBorder(),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Nama produk tidak boleh kosong';
+                          }
+                          return null;
+                        },
                       ),
-                      keyboardType: TextInputType.number,
-                    ),
-                  ],
+                      const SizedBox(height: 10),
+                      TextFormField(
+                        controller: descriptionController,
+                        decoration: const InputDecoration(
+                          labelText: 'Deskripsi',
+                          border: OutlineInputBorder(),
+                        ),
+                        maxLines: 3,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Deskripsi tidak boleh kosong';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 10),
+                      TextFormField(
+                        controller: priceController,
+                        decoration: const InputDecoration(
+                          labelText: 'Harga',
+                          border: OutlineInputBorder(),
+                        ),
+                        keyboardType: TextInputType.number,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Harga tidak boleh kosong';
+                          }
+                          if (double.tryParse(value) == null ||
+                              double.parse(value) <= 0) {
+                            return 'Masukkan harga yang valid (> 0)';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 10),
+                      TextFormField(
+                        controller: stockController,
+                        decoration: const InputDecoration(
+                          labelText: 'Stok Tersedia',
+                          border: OutlineInputBorder(),
+                        ),
+                        keyboardType: TextInputType.number,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Stok tidak boleh kosong';
+                          }
+                          if (int.tryParse(value) == null ||
+                              int.parse(value) < 0) {
+                            return 'Masukkan stok yang valid (>= 0)';
+                          }
+                          return null;
+                        },
+                      ),
+                    ],
+                  ),
                 ),
               ),
               actions: [
@@ -356,10 +407,8 @@ class _ManageProductsScreenState extends State<ManageProductsScreen> {
                       onPressed: provider.isLoading
                           ? null
                           : () async {
-                              if (nameController.text.isNotEmpty &&
-                                  descriptionController.text.isNotEmpty &&
-                                  priceController.text.isNotEmpty &&
-                                  stockController.text.isNotEmpty) {
+                              // 💡 VALIDATOR DITAMBAHKAN DI SINI
+                              if (_formKey.currentState!.validate()) {
                                 // 1. Ambil Provider tanpa listen untuk fungsi async
                                 final ProductsProvider nonListeningProvider =
                                     Provider.of<ProductsProvider>(
@@ -396,8 +445,11 @@ class _ManageProductsScreenState extends State<ManageProductsScreen> {
                                   id: product?.id ?? '',
                                   name: nameController.text,
                                   description: descriptionController.text,
-                                  price: double.parse(priceController.text),
-                                  stock: int.parse(stockController.text),
+                                  // Pastikan parsing aman karena sudah divalidasi
+                                  price: double.parse(
+                                    priceController.text.trim(),
+                                  ),
+                                  stock: int.parse(stockController.text.trim()),
                                   imageUrl: finalImageUrl,
                                 );
 
@@ -420,12 +472,6 @@ class _ManageProductsScreenState extends State<ManageProductsScreen> {
                                 _showSnackbar(
                                   this.context, // Gunakan context State utama
                                   '${product == null ? 'Penambahan' : 'Pengeditan'} produk berhasil!',
-                                );
-                              } else {
-                                _showSnackbar(
-                                  innerContext, // Gunakan innerContext untuk pesan di dialog
-                                  'Mohon isi semua field wajib.',
-                                  isError: true,
                                 );
                               }
                             },
@@ -459,6 +505,8 @@ class _ManageProductsScreenState extends State<ManageProductsScreen> {
   // Fungsi _showRecordSaleDialog tidak memerlukan revisi karena tidak berinteraksi langsung dengan Cloudinary.
   void _showRecordSaleDialog(BuildContext context, Product product) {
     final quantityController = TextEditingController();
+    final _saleFormKey =
+        GlobalKey<FormState>(); // Validator untuk dialog penjualan
 
     showDialog(
       context: context,
@@ -468,29 +516,48 @@ class _ManageProductsScreenState extends State<ManageProductsScreen> {
             return AlertDialog(
               title: const Text('Catat Penjualan Produk'),
               content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Produk: ${product.name}',
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      'Harga per unit: Rp. ${product.price.toStringAsFixed(0)}',
-                    ),
-                    Text('Stok tersedia: ${product.stock}'),
-                    const SizedBox(height: 20),
-                    TextField(
-                      controller: quantityController,
-                      decoration: const InputDecoration(
-                        labelText: 'Jumlah Terjual',
-                        hintText: 'Masukkan jumlah produk yang terjual',
+                child: Form(
+                  // <-- Tambahkan Form di sini
+                  key: _saleFormKey,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Produk: ${product.name}',
+                        style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
-                      keyboardType: TextInputType.number,
-                    ),
-                  ],
+                      const SizedBox(height: 10),
+                      Text(
+                        'Harga per unit: Rp. ${product.price.toStringAsFixed(0)}',
+                      ),
+                      Text('Stok tersedia: ${product.stock}'),
+                      const SizedBox(height: 20),
+                      TextFormField(
+                        // <-- Ganti ke TextFormField
+                        controller: quantityController,
+                        decoration: const InputDecoration(
+                          labelText: 'Jumlah Terjual',
+                          hintText: 'Masukkan jumlah produk yang terjual',
+                          border: OutlineInputBorder(),
+                        ),
+                        keyboardType: TextInputType.number,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Jumlah tidak boleh kosong';
+                          }
+                          final quantity = int.tryParse(value);
+                          if (quantity == null || quantity <= 0) {
+                            return 'Jumlah harus berupa angka positif';
+                          }
+                          if (quantity > product.stock) {
+                            return 'Jumlah melebihi stok tersedia (${product.stock})';
+                          }
+                          return null;
+                        },
+                      ),
+                    ],
+                  ),
                 ),
               ),
               actions: [
@@ -503,30 +570,30 @@ class _ManageProductsScreenState extends State<ManageProductsScreen> {
                   onPressed: transactionProvider.isLoading
                       ? null
                       : () async {
-                          final quantitySold =
-                              int.tryParse(quantityController.text) ?? 0;
-                          final authProvider = Provider.of<AuthProvider>(
-                            context,
-                            listen: false,
-                          );
-                          final String? currentPengepulId =
-                              authProvider.appUser?.id;
-                          if (currentPengepulId == null) {
-                            // <-- PERIKSA ID PENGGUNA
-                            // Tampilkan pesan error jika ID pengguna tidak ditemukan
-                            Navigator.pop(
-                              innerContext,
-                            ); // Tutup dialog dengan innerContext
-                            _showSnackbar(
+                          // 💡 Periksa validasi form penjualan
+                          if (_saleFormKey.currentState!.validate()) {
+                            final quantitySold =
+                                int.tryParse(quantityController.text) ?? 0;
+                            final authProvider = Provider.of<AuthProvider>(
                               context,
-                              'Kesalahan: ID pengguna tidak ditemukan. Mohon coba login ulang.',
-                              isError: true,
+                              listen: false,
                             );
-                            return;
-                          }
+                            final String? currentPengepulId =
+                                authProvider.appUser?.id;
+                            if (currentPengepulId == null) {
+                              // <-- PERIKSA ID PENGGUNA
+                              // Tampilkan pesan error jika ID pengguna tidak ditemukan
+                              Navigator.pop(
+                                innerContext,
+                              ); // Tutup dialog dengan innerContext
+                              _showSnackbar(
+                                context,
+                                'Kesalahan: ID pengguna tidak ditemukan. Mohon coba login ulang.',
+                                isError: true,
+                              );
+                              return;
+                            }
 
-                          if (quantitySold > 0 &&
-                              quantitySold <= product.stock) {
                             // Tutup dialog secara instan
                             Navigator.pop(innerContext); // Gunakan innerContext
 
@@ -571,16 +638,6 @@ class _ManageProductsScreenState extends State<ManageProductsScreen> {
                                 ),
                               );
                             }
-                          } else {
-                            // Tampilkan pesan error di dalam dialog
-                            ScaffoldMessenger.of(innerContext).showSnackBar(
-                              const SnackBar(
-                                content: Text(
-                                  'Jumlah terjual tidak valid atau melebihi stok tersedia.',
-                                ),
-                                backgroundColor: Colors.red,
-                              ),
-                            );
                           }
                         },
                   child: transactionProvider.isLoading
@@ -599,6 +656,8 @@ class _ManageProductsScreenState extends State<ManageProductsScreen> {
           },
         );
       },
-    );
+    ).then((_) {
+      quantityController.dispose();
+    });
   }
 }

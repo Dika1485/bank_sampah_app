@@ -32,6 +32,9 @@ class _NasabahDashboardScreenState extends State<NasabahDashboardScreen> {
     _fetchInitialData();
   }
 
+  // Tambahkan key untuk form dialog pencairan
+  final _withdrawalFormKey = GlobalKey<FormState>();
+
   void _fetchInitialData() {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final transactionProvider = Provider.of<TransactionProvider>(
@@ -408,115 +411,141 @@ class _NasabahDashboardScreenState extends State<NasabahDashboardScreen> {
     String userId,
     String userName,
   ) {
+    // Reset key setiap kali dialog dibuka jika perlu, atau gunakan key yang sama.
+    // Jika Anda ingin form ini di-reset setiap kali, Anda bisa mendefinisikan key di sini
+    // final _withdrawalFormKey = GlobalKey<FormState>();
     final TextEditingController amountController = TextEditingController();
+
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (BuildContext dialogContext) {
         return Consumer<TransactionProvider>(
           builder: (context, transactionProvider, child) {
-            return AlertDialog(
-              title: const Text('Cairkan Dana'),
-              content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    TextField(
-                      controller: amountController,
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
-                        labelText: 'Jumlah Penarikan (Rp)',
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      'Saldo Tersedia: ${NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0).format(transactionProvider.nasabahBalance)}',
-                      style: const TextStyle(fontSize: 12, color: Colors.grey),
-                    ),
-                  ],
-                ),
-              ),
-              actions: <Widget>[
-                TextButton(
-                  child: const Text('Batal'),
-                  onPressed: () {
-                    Navigator.of(dialogContext).pop();
-                  },
-                ),
-                ElevatedButton(
-                  onPressed: transactionProvider.isLoading
-                      ? null
-                      : () async {
-                          final double? amount = double.tryParse(
-                            amountController.text,
-                          );
+            // --- Membungkus konten dengan Form ---
+            return Form(
+              key: _withdrawalFormKey, // Gunakan GlobalKey
+              child: AlertDialog(
+                title: const Text('Cairkan Dana'),
+                content: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // --- Mengganti TextField dengan TextFormField ---
+                      TextFormField(
+                        controller: amountController,
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(
+                          labelText: 'Jumlah Penarikan (Rp)',
+                          border: OutlineInputBorder(),
+                        ),
+                        // --- Tambahkan Validator ---
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Jumlah penarikan wajib diisi.';
+                          }
+                          final double? amount = double.tryParse(value);
                           if (amount == null || amount <= 0) {
-                            ScaffoldMessenger.of(dialogContext).showSnackBar(
-                              const SnackBar(
-                                content: Text('Masukkan jumlah yang valid.'),
-                                backgroundColor: Colors.red,
-                              ),
-                            );
-                            return;
+                            return 'Masukkan jumlah yang valid (> Rp 0).';
                           }
                           if (amount > transactionProvider.nasabahBalance) {
-                            ScaffoldMessenger.of(dialogContext).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  'Saldo tidak mencukupi. Saldo Anda: ${NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0).format(transactionProvider.nasabahBalance)}',
-                                ),
-                                backgroundColor: Colors.red,
-                              ),
-                            );
-                            return;
+                            return 'Saldo tidak mencukupi. Tersedia: Rp ${NumberFormat.currency(locale: 'id_ID', symbol: '', decimalDigits: 0).format(transactionProvider.nasabahBalance)}';
                           }
-                          try {
-                            await transactionProvider.requestPencairan(
-                              userId: userId,
-                              userName: userName,
-                              amount: amount,
-                            );
-                            if (transactionProvider.errorMessage != null) {
-                              ScaffoldMessenger.of(dialogContext).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                    transactionProvider.errorMessage!,
-                                  ),
-                                  backgroundColor: Colors.red,
-                                ),
-                              );
-                            } else {
-                              Navigator.of(dialogContext).pop();
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text(
-                                    'Permintaan pencairan berhasil diajukan!',
-                                  ),
-                                  backgroundColor: Colors.green,
-                                ),
-                              );
-                            }
-                          } catch (e) {
-                            ScaffoldMessenger.of(dialogContext).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  'Terjadi kesalahan tak terduga: $e',
-                                ),
-                                backgroundColor: Colors.red,
-                              ),
-                            );
-                          }
+                          return null; // Valid
                         },
-                  child: transactionProvider.isLoading
-                      ? const LoadingIndicator(color: Colors.white)
-                      : const Text('Cairkan'),
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        'Saldo Tersedia: ${NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0).format(transactionProvider.nasabahBalance)}',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ],
+                actions: <Widget>[
+                  TextButton(
+                    child: const Text('Batal'),
+                    onPressed: () {
+                      Navigator.of(dialogContext).pop();
+                      amountController
+                          .dispose(); // Bersihkan controller saat dibatalkan
+                    },
+                  ),
+                  ElevatedButton(
+                    onPressed: transactionProvider.isLoading
+                        ? null
+                        : () async {
+                            // --- Panggil Form Validation di sini ---
+                            if (_withdrawalFormKey.currentState!.validate()) {
+                              final double amount = double.parse(
+                                amountController.text,
+                              );
+
+                              // Logika validasi saldo > 0 sudah ditangani oleh validator
+
+                              try {
+                                await transactionProvider.requestPencairan(
+                                  userId: userId,
+                                  userName: userName,
+                                  amount: amount,
+                                );
+
+                                // Cek error dari provider (jika ada error yang ditangani di level provider, misal kegagalan API)
+                                if (transactionProvider.errorMessage != null) {
+                                  ScaffoldMessenger.of(
+                                    dialogContext,
+                                  ).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        transactionProvider.errorMessage!,
+                                      ),
+                                      backgroundColor: Colors.red,
+                                    ),
+                                  );
+                                } else {
+                                  Navigator.of(dialogContext).pop();
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                        'Permintaan pencairan berhasil diajukan!',
+                                      ),
+                                      backgroundColor: Colors.green,
+                                    ),
+                                  );
+                                }
+                              } catch (e) {
+                                ScaffoldMessenger.of(
+                                  dialogContext,
+                                ).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      'Terjadi kesalahan tak terduga: $e',
+                                    ),
+                                    backgroundColor: Colors.red,
+                                  ),
+                                );
+                              } finally {
+                                amountController
+                                    .dispose(); // Bersihkan controller setelah selesai
+                              }
+                            }
+                          },
+                    child: transactionProvider.isLoading
+                        ? const LoadingIndicator(color: Colors.white)
+                        : const Text('Cairkan'),
+                  ),
+                ],
+              ),
             );
           },
         );
       },
-    );
+    ).then((_) {
+      // Pastikan controller dihapus (meskipun sudah dilakukan di logic)
+      amountController.dispose();
+    });
   }
 }

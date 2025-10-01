@@ -29,6 +29,7 @@ class HargaSampahScreen extends StatefulWidget {
 class _HargaSampahScreenState extends State<HargaSampahScreen> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _priceController = TextEditingController();
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   SampahCategory? _selectedCategory;
   SampahType? _editingSampah; // To hold the sampah being edited
 
@@ -57,10 +58,8 @@ class _HargaSampahScreenState extends State<HargaSampahScreen> {
 
     showDialog(
       context: context,
-      barrierDismissible:
-          false, // Tidak bisa ditutup dengan tap di luar saat loading
+      barrierDismissible: false,
       builder: (BuildContext dialogContext) {
-        // Gunakan StatefulBuilder untuk mengelola state di dalam dialog
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
@@ -68,138 +67,126 @@ class _HargaSampahScreenState extends State<HargaSampahScreen> {
                 sampah == null ? 'Tambah Jenis Sampah' : 'Edit Harga Sampah',
               ),
               content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (sampah == null) // Only allow adding name for new sampah
+                // 1. Bungkus dengan Form dan gunakan _formKey
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (sampah == null)
+                        TextFormField(
+                          controller: _nameController,
+                          decoration: const InputDecoration(
+                            labelText: 'Nama Jenis Sampah',
+                            border: OutlineInputBorder(),
+                          ),
+                          enabled: sampah == null && !_isDialogButtonLoading,
+                          // 2. Tambahkan validator untuk Nama
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Nama tidak boleh kosong';
+                            }
+                            return null;
+                          },
+                        ),
+                      if (sampah == null) const SizedBox(height: 16),
+                      if (sampah == null)
+                        DropdownButtonFormField<SampahCategory>(
+                          value: _selectedCategory,
+                          decoration: const InputDecoration(
+                            labelText: 'Kategori',
+                            border: OutlineInputBorder(),
+                          ),
+                          // ... items tetap sama ...
+                          items: const [
+                            DropdownMenuItem(
+                              value: SampahCategory.organik,
+                              child: Text('Organik'),
+                            ),
+                            DropdownMenuItem(
+                              value: SampahCategory.anorganik,
+                              child: Text('Anorganik'),
+                            ),
+                          ],
+                          onChanged: _isDialogButtonLoading
+                              ? null
+                              : (SampahCategory? newValue) {
+                                  setDialogState(() {
+                                    _selectedCategory = newValue;
+                                  });
+                                },
+                          // 3. Tambahkan validator untuk Kategori
+                          validator: (value) {
+                            if (value == null && sampah == null) {
+                              return 'Pilih kategori';
+                            }
+                            return null;
+                          },
+                        ),
+                      if (sampah == null) const SizedBox(height: 16),
                       TextFormField(
-                        controller: _nameController,
+                        controller: _priceController,
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
                         decoration: const InputDecoration(
-                          labelText: 'Nama Jenis Sampah',
+                          labelText: 'Harga per kg (Rp)',
                           border: OutlineInputBorder(),
                         ),
-                        // Nama tidak bisa diubah saat mengedit atau saat loading
-                        enabled: sampah == null && !_isDialogButtonLoading,
-                      ),
-                    if (sampah == null) const SizedBox(height: 16),
-                    if (sampah ==
-                        null) // Only allow adding category for new sampah
-                      DropdownButtonFormField<SampahCategory>(
-                        value: _selectedCategory,
-                        decoration: const InputDecoration(
-                          labelText: 'Kategori',
-                          border: OutlineInputBorder(),
-                        ),
-                        items: const [
-                          DropdownMenuItem(
-                            value: SampahCategory.organik,
-                            child: Text('Organik'),
-                          ),
-                          DropdownMenuItem(
-                            value: SampahCategory.anorganik,
-                            child: Text('Anorganik'),
-                          ),
-                        ],
-                        onChanged: _isDialogButtonLoading
-                            ? null
-                            : (SampahCategory? newValue) {
-                                setDialogState(() {
-                                  // Gunakan setDialogState untuk update UI dialog
-                                  _selectedCategory = newValue;
-                                });
-                              },
+                        enabled: !_isDialogButtonLoading,
+                        // 4. Perbarui validator untuk Harga
                         validator: (value) {
-                          if (value == null && sampah == null) {
-                            return 'Pilih kategori';
+                          if (value == null || value.isEmpty) {
+                            return 'Harga tidak boleh kosong';
+                          }
+                          final double? price = double.tryParse(value);
+                          if (price == null || price <= 0) {
+                            return 'Masukkan harga yang valid (> 0)';
                           }
                           return null;
                         },
                       ),
-                    if (sampah == null) const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _priceController,
-                      keyboardType: const TextInputType.numberWithOptions(
-                        decimal: true,
-                      ),
-                      decoration: const InputDecoration(
-                        labelText: 'Harga per kg (Rp)',
-                        border: OutlineInputBorder(),
-                      ),
-                      enabled: !_isDialogButtonLoading, // Disable saat loading
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Harga tidak boleh kosong';
-                        }
-                        if (double.tryParse(value) == null ||
-                            double.parse(value) <= 0) {
-                          return 'Masukkan harga yang valid';
-                        }
-                        return null;
-                      },
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
               actions: <Widget>[
+                // ... (Tombol Batal tetap sama) ...
                 TextButton(
                   child: const Text('Batal'),
                   onPressed: _isDialogButtonLoading
                       ? null
                       : () {
-                          // Disable saat loading
                           Navigator.of(dialogContext).pop();
                           _clearForm();
                         },
                 ),
                 ElevatedButton(
                   child: _isDialogButtonLoading
-                      ? const LoadingIndicator(
-                          color: Colors.white,
-                        ) // Tampilkan loading di tombol
+                      ? const LoadingIndicator(color: Colors.white)
                       : Text(sampah == null ? 'Tambah' : 'Simpan'),
                   onPressed: _isDialogButtonLoading
                       ? null
                       : () async {
-                          // Disable saat loading
+                          // 5. Panggil validasi sebelum memproses data
+                          if (!_formKey.currentState!.validate()) {
+                            // Jika validasi gagal, form akan menampilkan error dan berhenti di sini
+                            return;
+                          }
+
+                          // Lanjutkan proses hanya jika validasi berhasil
                           final sampahPriceProvider =
                               Provider.of<SampahPriceProvider>(
                                 context,
                                 listen: false,
                               );
-                          final double? price = double.tryParse(
+                          final double price = double.parse(
                             _priceController.text,
                           );
 
-                          // Validasi input
-                          if (price == null || price <= 0) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Masukkan harga yang valid.'),
-                              ),
-                            );
-                            return;
-                          }
-                          if (sampah == null) {
-                            // Jika menambah baru, cek nama dan kategori
-                            if (_nameController.text.isEmpty) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text(
-                                    'Nama jenis sampah tidak boleh kosong.',
-                                  ),
-                                ),
-                              );
-                              return;
-                            }
-                            if (_selectedCategory == null) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Pilih kategori jenis sampah.'),
-                                ),
-                              );
-                              return;
-                            }
-                          }
+                          // Hapus logic validasi manual di sini, karena sudah ditangani oleh TextFormField validator
+                          // if (price == null || price <= 0) { ... HAPUS INI ... }
+                          // if (sampah == null) { ... HAPUS INI ... }
 
                           // Set loading state di dalam dialog
                           setDialogState(() {
@@ -220,8 +207,7 @@ class _HargaSampahScreenState extends State<HargaSampahScreen> {
                               );
                             }
 
-                            if (!mounted)
-                              return; // Check if widget is still mounted
+                            if (!mounted) return;
 
                             if (sampahPriceProvider.errorMessage != null) {
                               ScaffoldMessenger.of(context).showSnackBar(
@@ -229,8 +215,7 @@ class _HargaSampahScreenState extends State<HargaSampahScreen> {
                                   content: Text(
                                     sampahPriceProvider.errorMessage!,
                                   ),
-                                  backgroundColor:
-                                      Colors.red, // Warna merah untuk error
+                                  backgroundColor: Colors.red,
                                 ),
                               );
                             } else {
@@ -241,12 +226,11 @@ class _HargaSampahScreenState extends State<HargaSampahScreen> {
                                         ? 'Jenis sampah berhasil ditambahkan!'
                                         : 'Harga sampah berhasil diperbarui!',
                                   ),
-                                  backgroundColor:
-                                      Colors.green, // Warna hijau untuk sukses
+                                  backgroundColor: Colors.green,
                                 ),
                               );
-                              Navigator.of(dialogContext).pop(); // Tutup dialog
-                              _clearForm(); // Bersihkan form
+                              Navigator.of(dialogContext).pop();
+                              _clearForm();
                             }
                           } catch (e) {
                             if (!mounted) return;
@@ -257,7 +241,6 @@ class _HargaSampahScreenState extends State<HargaSampahScreen> {
                               ),
                             );
                           } finally {
-                            // Pastikan loading state diset false di akhir
                             setDialogState(() {
                               _isDialogButtonLoading = false;
                             });

@@ -102,6 +102,16 @@ class TransactionProvider with ChangeNotifier {
   }
 
   // MARK: - Fungsi Bendahara
+  List<Transaction> get completedSetoranTransactions {
+    return _allTransactions
+        .where(
+          (t) =>
+              t.type == TransactionType.setoran &&
+              t.status == TransactionStatus.completed,
+        )
+        .toList();
+  }
+
   void listenToAllTransactions() {
     _isLoading = true;
     notifyListeners();
@@ -117,7 +127,7 @@ class TransactionProvider with ChangeNotifier {
                 .map((doc) => Transaction.fromFirestore(doc.data(), doc.id))
                 .toList();
             _combineAndSortTransactions();
-            _isLoading = false;
+            // _isLoading = false;
           },
           onError: (error) {
             _errorMessage = 'Gagal memuat transaksi utama: $error';

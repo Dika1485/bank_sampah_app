@@ -40,39 +40,69 @@ class _SellWasteScreenState extends State<SellWasteScreen> {
     super.dispose();
   }
 
+  // --- Fungsi Tambahan: Pengecekan Kuantitas Sampah Total ---
+  Map<String, double> _getSoldWasteQuantities() {
+    final Map<String, double> soldWaste = {};
+    _wasteControllers.forEach((type, controller) {
+      // Gunakan nilai yang sudah divalidasi oleh TextFormField (hanya perlu parse)
+      final value = double.tryParse(controller.text);
+      if (value != null && value > 0) {
+        soldWaste[type] = value;
+      }
+    });
+    return soldWaste;
+  }
+
   Future<void> _sellWaste() async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final String? currentPengepulId = authProvider.appUser?.id;
+
+    // Pengecekan ID Pengepul di awal (sebelum validasi form)
+    if (currentPengepulId == null || currentPengepulId.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('ID Pengepul tidak ditemukan. Mohon login ulang.'),
+        ),
+      );
+      return;
+    }
+
     if (_formKey.currentState!.validate()) {
+      final Map<String, double> soldWaste = _getSoldWasteQuantities();
+
+      // **VALIDASI 1 (Tingkat Form Kustom): Minimal Satu Sampah Terjual**
+      if (soldWaste.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Pilih setidaknya satu jenis sampah dengan jumlah lebih dari 0 kg.',
+            ),
+            backgroundColor: Colors.orange, // Umpan balik yang jelas
+          ),
+        );
+        return; // Hentikan proses jika tidak ada sampah yang dijual
+      }
+
+      // **VALIDASI 2 (Tingkat Form): Total Harga**
+      final double totalRevenue =
+          double.tryParse(_revenueController.text) ?? 0.0;
+      if (totalRevenue <= 0) {
+        // Validator di TextFormField sudah menangani ini, tapi ini pengamanan tambahan
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Total harga harus lebih dari Rp 0.'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        return;
+      }
+
       setState(() {
         _isLoading = true;
       });
 
       try {
-        final Map<String, double> soldWaste = {};
-        _wasteControllers.forEach((type, controller) {
-          final value = double.tryParse(controller.text);
-          if (value != null && value > 0) {
-            soldWaste[type] = value;
-          }
-        });
-
-        // Pastikan ada setidaknya satu sampah yang dijual
-        if (soldWaste.isEmpty) {
-          throw Exception('Pilih setidaknya satu jenis sampah yang dijual.');
-        }
-
-        final double totalRevenue =
-            double.tryParse(_revenueController.text) ?? 0.0;
-
-        // Pastikan totalRevenue valid
-        if (totalRevenue <= 0) {
-          throw Exception('Total harga harus lebih dari Rp 0.');
-        }
-
-        if (currentPengepulId == null || currentPengepulId.isEmpty) {
-          throw Exception('ID Pengepul tidak ditemukan. Mohon login ulang.');
-        }
+        // Hapus semua pengecekan validasi yang sudah dipindahkan di atas
 
         // Panggil fungsi sellWaste dari TransactionProvider
         await Provider.of<TransactionProvider>(
@@ -81,18 +111,33 @@ class _SellWasteScreenState extends State<SellWasteScreen> {
         ).sellWaste(soldWaste, totalRevenue, currentPengepulId);
 
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Penjualan berhasil dicatat!')),
+          const SnackBar(
+            content: Text('Penjualan berhasil dicatat!'),
+            backgroundColor: Colors.green, // Indikasi sukses
+          ),
         );
 
-        Navigator.of(context).pop();
-      } on Exception catch (e) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Error: ${e.toString()}')));
+        // Clear controllers setelah sukses
+        _wasteControllers.forEach((key, controller) => controller.clear());
+        _revenueController.clear();
+
+        // Navigator.of(context).pop(); // Opsi: kembali ke layar sebelumnya
+      } catch (e) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Error: Penjualan gagal dicatat. Detail: ${e.toString()}',
+            ),
+            backgroundColor: Colors.red, // Indikasi error
+          ),
+        );
       } finally {
-        setState(() {
-          _isLoading = false;
-        });
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
       }
     }
   }
