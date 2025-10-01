@@ -1,3 +1,13 @@
+import java.util.Properties
+
+val localProperties = Properties()
+val localPropertiesFile = rootProject.file("key.properties")
+if (localPropertiesFile.exists()) {
+    localPropertiesFile.inputStream().use { input ->
+        localProperties.load(input)
+    }
+}
+
 plugins {
     id("com.android.application")
     // START: FlutterFire Configuration
@@ -33,11 +43,22 @@ android {
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        // Mendefinisikan konfigurasi rilis
+        create("release") {
+            storeFile = file(localProperties.getProperty("storeFile") ?: "")
+            storePassword = localProperties.getProperty("storePassword") ?: ""
+            keyAlias = localProperties.getProperty("keyAlias") ?: ""
+            keyPassword = localProperties.getProperty("keyPassword") ?: ""
+        }
+    }
+
     buildTypes {
         release {
             // TODO: Add your own signing config for the release build.
             // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName("release") // Pastikan ini ditambahkan
         }
     }
 }
