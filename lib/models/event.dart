@@ -5,12 +5,14 @@ class Event {
   final String title;
   final String description;
   final DateTime dateTime;
+  final String? imageUrl;
 
   Event({
     required this.id,
     required this.title,
     required this.description,
     required this.dateTime,
+    this.imageUrl,
   });
 
   // Metode untuk mengubah objek Event menjadi Map untuk Firestore
@@ -19,6 +21,7 @@ class Event {
       'title': title,
       'description': description,
       'dateTime': Timestamp.fromDate(dateTime),
+      'imageUrl': imageUrl,
     };
   }
 
@@ -26,9 +29,10 @@ class Event {
   factory Event.fromFirestore(Map<String, dynamic> data, String id) {
     return Event(
       id: id,
-      title: data['title'] as String,
-      description: data['description'] as String,
+      title: data['title'] as String? ?? '',
+      description: data['description'] as String? ?? '',
       dateTime: (data['dateTime'] as Timestamp).toDate(),
+      imageUrl: data['imageUrl'] as String? ?? '',
     );
   }
 }

@@ -9,6 +9,56 @@ class ProductDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Cek apakah URL gambar tersedia dan tidak kosong
+    final hasImage = product.imageUrl != null && product.imageUrl!.isNotEmpty;
+
+    // 💡 Definisikan widget gambar secara kondisional
+    Widget productImageWidget = Container(
+      height: 250, // Tinggikan sedikit agar lebih menonjol di halaman detail
+      width: double.infinity,
+      color: Colors.grey[200],
+      child: hasImage
+          ? Image.network(
+              product.imageUrl!,
+              fit: BoxFit.cover,
+              // Loading builder untuk menampilkan indikator saat memuat
+              loadingBuilder: (context, child, loadingProgress) {
+                if (loadingProgress == null) return child;
+                return const Center(
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                );
+              },
+              // Error builder jika gambar gagal dimuat
+              errorBuilder: (context, error, stackTrace) {
+                return Center(
+                  child: Icon(
+                    Icons.broken_image,
+                    size: 80,
+                    color: Colors.grey[400],
+                  ),
+                );
+              },
+            )
+          : const Center(
+              // Placeholder jika tidak ada URL gambar
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.shopping_bag_outlined,
+                    size: 100,
+                    color: Colors.grey,
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    'Gambar Tidak Tersedia',
+                    style: TextStyle(color: Colors.grey),
+                  ),
+                ],
+              ),
+            ),
+    );
+
     return Scaffold(
       appBar: AppBar(title: Text(product.name)),
       body: SingleChildScrollView(
@@ -16,17 +66,9 @@ class ProductDetailScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Placeholder untuk gambar produk
-            Container(
-              height: 200,
-              width: double.infinity,
-              color: Colors.grey[200],
-              child: const Icon(
-                Icons.shopping_bag_outlined,
-                size: 100,
-                color: Colors.grey,
-              ),
-            ),
+            // 💡 Gunakan widget gambar yang sudah direvisi
+            productImageWidget,
+
             const SizedBox(height: 20),
             Text(
               product.name,
@@ -55,7 +97,11 @@ class ProductDetailScreen extends StatelessWidget {
             const SizedBox(height: 20),
             Text(
               'Stok Tersedia: ${product.stock}',
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: product.stock > 0 ? Colors.black : Colors.red,
+              ),
             ),
           ],
         ),

@@ -33,7 +33,7 @@ class WithdrawalRequest {
       amount: (data['amount'] as num?)?.toDouble() ?? 0.0,
       timestamp: (data['timestamp'] as Timestamp).toDate(),
       status: data['status'] ?? 'pending',
-      validatedByPengepulId: data['validatedByPengepulId'],
+      validatedByPengepulId: data['validatedByPengepulId'] ?? '',
       validationTimestamp: (data['validationTimestamp'] as Timestamp?)
           ?.toDate(),
     );

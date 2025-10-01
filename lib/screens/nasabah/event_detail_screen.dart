@@ -9,6 +9,9 @@ class EventDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Tentukan apakah ada URL gambar yang valid
+    final hasImage = event.imageUrl != null && event.imageUrl!.isNotEmpty;
+
     return Scaffold(
       appBar: AppBar(title: const Text('Detail Acara')),
       body: SingleChildScrollView(
@@ -16,12 +19,57 @@ class EventDetailScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // 💡 Bagian Gambar/Placeholder yang Direvisi
             Container(
-              height: 200,
+              height:
+                  250, // Tinggikan sedikit untuk tampilan detail yang lebih baik
               width: double.infinity,
-              color: Colors.blue[100],
-              child: const Icon(Icons.event, size: 100, color: Colors.blue),
+              decoration: BoxDecoration(
+                color: hasImage ? null : Colors.blue[100],
+                borderRadius: BorderRadius.circular(8),
+                boxShadow: hasImage
+                    ? [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 5,
+                          offset: const Offset(0, 2),
+                        ),
+                      ]
+                    : null,
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: hasImage
+                    ? Image.network(
+                        event.imageUrl!,
+                        fit: BoxFit.cover, // Memastikan gambar menutupi area
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) return child;
+                          return Center(
+                            child: CircularProgressIndicator(
+                              value: loadingProgress.expectedTotalBytes != null
+                                  ? loadingProgress.cumulativeBytesLoaded /
+                                        loadingProgress.expectedTotalBytes!
+                                  : null,
+                            ),
+                          );
+                        },
+                        errorBuilder: (context, error, stackTrace) {
+                          return Center(
+                            child: Icon(
+                              Icons.broken_image,
+                              size: 80,
+                              color: Colors.red[300],
+                            ),
+                          );
+                        },
+                      )
+                    : const Center(
+                        child: Icon(Icons.event, size: 100, color: Colors.blue),
+                      ),
+              ),
             ),
+            // -------------------------------------------------------------
             const SizedBox(height: 20),
             Text(
               event.title,

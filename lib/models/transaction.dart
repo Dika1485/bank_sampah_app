@@ -36,7 +36,7 @@ class Transaction {
     return Transaction(
       id: id,
       userId: data['userId'] ?? '',
-      pengepulId: data['pengepulId'],
+      pengepulId: data['pengepulId'] ?? '',
       type: _mapTypeFromString(data['type']), // Menggunakan helper function
       sampahTypeId: data['sampahTypeId'] ?? '',
       sampahTypeName: data['sampahTypeName'] ?? '',

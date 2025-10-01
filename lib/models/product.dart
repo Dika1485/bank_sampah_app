@@ -6,6 +6,7 @@ class Product {
   final String description;
   final double price;
   final int stock;
+  final String? imageUrl;
 
   Product({
     required this.id,
@@ -13,6 +14,7 @@ class Product {
     required this.description,
     required this.price,
     required this.stock,
+    this.imageUrl,
   });
 
   // Metode untuk mengubah objek Product menjadi Map untuk Firestore
@@ -22,6 +24,7 @@ class Product {
       'description': description,
       'price': price,
       'stock': stock,
+      'imageUrl': imageUrl,
     };
   }
 
@@ -42,6 +45,7 @@ class Product {
       // Perbaikan di sini: Menangani nilai null dengan aman
       price: (data['price'] as num?)?.toDouble() ?? 0.0,
       stock: (data['stock'] as num?)?.toInt() ?? 0,
+      imageUrl: data['imageUrl'] as String? ?? '',
     );
   }
 }
