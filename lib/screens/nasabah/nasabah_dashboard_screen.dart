@@ -212,7 +212,7 @@ class _NasabahDashboardScreenState extends State<NasabahDashboardScreen> {
                 ),
 
                 const SizedBox(height: 20),
-                _buildSectionHeader(context, 'Produk dari Bank Sampah', () {
+                _buildSectionHeader(context, 'Katalog Produk Daur Ulang', () {
                   Navigator.of(context).push(
                     MaterialPageRoute(
                       builder: (context) => const AllProductsScreen(),

@@ -23,12 +23,18 @@ class _SplashScreenState extends State<SplashScreen> {
 
   void _checkAuthStatus() async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    // Tunggu sebentar untuk animasi splash screen (opsional)
-    await Future.delayed(const Duration(seconds: 2));
+
+    // 💡 Durasi diubah menjadi 3 detik untuk memberi waktu loading data dan menikmati splash
+    await Future.delayed(const Duration(seconds: 3));
+
+    // Pastikan widget masih mounted sebelum melakukan navigasi
+    if (!mounted) return;
 
     if (authProvider.firebaseUser != null) {
       // User sudah login, cek tipe user dan arahkan
-      await authProvider.appUser; // Pastikan appUser sudah dimuat
+      // Gunakan listen: false saat memanggil getter Future appUser
+      await authProvider.appUser;
+
       if (!mounted) return;
 
       if (authProvider.appUser?.userType == UserType.nasabah) {
@@ -41,12 +47,13 @@ class _SplashScreenState extends State<SplashScreen> {
         );
       } else {
         // Jika appUser null atau tipe tidak dikenal setelah login Firebase
+        // Arahkan ke GuestDashboard jika data user bermasalah, bukan langsung ke Login
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const LoginScreen()),
+          MaterialPageRoute(builder: (_) => const GuestDashboardScreen()),
         );
       }
     } else {
-      // User belum login, arahkan ke halaman login
+      // User belum login, arahkan ke Guest Dashboard
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (_) => const GuestDashboardScreen()),
       );
@@ -55,20 +62,38 @@ class _SplashScreenState extends State<SplashScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
+    return Scaffold(
+      backgroundColor: Colors.white, // Latar belakang putih agar logo menonjol
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Ganti dengan logo aplikasi Anda
-            Icon(Icons.recycling, size: 100, color: Colors.green),
-            SizedBox(height: 20),
-            Text(
-              'Bank Sampah App',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            // 💡 Ganti dengan widget Image.asset menggunakan path logo Anda
+            Image.asset(
+              'lib/assets/Gemini_Generated_Image_a5cufza5cufza5cu 1 (Traced) (3).png',
+              height: 150, // Sesuaikan ukuran logo
+              width: 150,
             ),
-            SizedBox(height: 30),
-            CircularProgressIndicator(),
+            const SizedBox(height: 30),
+            Text(
+              'SIMARU',
+              style: TextStyle(fontSize: 32, fontWeight: FontWeight.w900),
+            ),
+            const Text(
+              'Sistem Informasi Bank Sampah Mawar Biru',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: Colors.grey,
+              ),
+            ),
+            const SizedBox(height: 50),
+            // Menggunakan widget indikator loading bawaan
+            const CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(
+                Colors.green,
+              ), // Hijau bank sampah
+            ),
           ],
         ),
       ),
