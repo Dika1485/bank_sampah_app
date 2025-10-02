@@ -53,7 +53,7 @@ class PdfGenerator {
           return [
             pw.Center(
               child: pw.Text(
-                'Laporan Buku Tabungan Sampah${period != null ? ' ($period)' : ''}',
+                'Laporan Buku Tabungan Bank Sampah${period != null ? ' ($period)' : ''}',
                 style: pw.TextStyle(
                   fontSize: 24,
                   fontWeight: pw.FontWeight.bold,
@@ -205,7 +205,7 @@ class PdfGenerator {
 
             // --- PENAMBAHAN SALDO KAS BANK SAMPAH (totalRevenue) ---
             pw.Text(
-              'Saldo Kas Bank Sampah Saat Ini: Rp ${NumberFormat('#,##0', 'id_ID').format(totalRevenue)}',
+              'Saldo Bank Sampah Saat Ini: Rp ${NumberFormat('#,##0', 'id_ID').format(totalRevenue)}',
               style: pw.TextStyle(
                 fontSize: 18,
                 fontWeight: pw.FontWeight.bold,

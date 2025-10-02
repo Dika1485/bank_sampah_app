@@ -52,7 +52,7 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyDBGPtevPZLO0xaN9LvimPHbdXwMTbFQmE',
-    appId: '1:923626442750:android:58c1bd9f6cd6765ddabaaf',
+    appId: '1:923626442750:android:2973af937193e051dabaaf',
     messagingSenderId: '923626442750',
     projectId: 'bank-sampah-app-ed9cb',
     storageBucket: 'bank-sampah-app-ed9cb.firebasestorage.app',
@@ -60,11 +60,11 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyD8buWJLJjBYmHU5794WvAV07ZvWJTmaGo',
-    appId: '1:923626442750:ios:beb0510e6531ba3edabaaf',
+    appId: '1:923626442750:ios:0940dfbdd9400bacdabaaf',
     messagingSenderId: '923626442750',
     projectId: 'bank-sampah-app-ed9cb',
     storageBucket: 'bank-sampah-app-ed9cb.firebasestorage.app',
-    iosBundleId: 'com.example.bankSampahApp',
+    iosBundleId: 'app.gogeniusdev.simaru',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
@@ -85,4 +85,5 @@ class DefaultFirebaseOptions {
     storageBucket: 'bank-sampah-app-ed9cb.firebasestorage.app',
     measurementId: 'G-NXFJQY1SW3',
   );
+
 }

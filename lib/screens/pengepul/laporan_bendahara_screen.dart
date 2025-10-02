@@ -165,7 +165,7 @@ class _LaporanBendaharaScreenState extends State<LaporanBendaharaScreen> {
                     const SizedBox(height: 16),
                     // Tampilan kartu ringkasan
                     _buildSummaryCard(
-                      title: 'Saldo Kas Bank Sampah Saat Ini',
+                      title: 'Saldo Bank Sampah Saat Ini',
                       value: NumberFormat.currency(
                         locale: 'id_ID',
                         symbol: 'Rp ',

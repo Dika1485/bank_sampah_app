@@ -19,7 +19,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.bank_sampah_app"
+    namespace = "app.gogeniusdev.simaru"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -34,7 +34,7 @@ android {
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.example.bank_sampah_app"
+        applicationId = "app.gogeniusdev.simaru"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion

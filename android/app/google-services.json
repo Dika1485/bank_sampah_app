@@ -7,6 +7,25 @@
   "client": [
     {
       "client_info": {
+        "mobilesdk_app_id": "1:923626442750:android:2973af937193e051dabaaf",
+        "android_client_info": {
+          "package_name": "app.gogeniusdev.simaru"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDBGPtevPZLO0xaN9LvimPHbdXwMTbFQmE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
         "mobilesdk_app_id": "1:923626442750:android:58c1bd9f6cd6765ddabaaf",
         "android_client_info": {
           "package_name": "com.example.bank_sampah_app"
