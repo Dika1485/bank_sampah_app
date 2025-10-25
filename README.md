@@ -1,57 +1,54 @@
-
------
-
-# Bank Sampah App
+# SIMARU: Mawar Biru Waste Bank Information System
 
 ## Project Overview
 
-The Bank Sampah App is a Flutter-based mobile application designed to streamline waste management and recycling processes for **Customers (Nasabah)** and **Collectors (Pengepul)**. This application aims to foster environmental sustainability by simplifying waste collection and providing a transparent system for valuing recyclable materials, effectively turning trash into cash.
+**SIMARU** (*Sistem Informasi Bank Sampah Mawar Biru*) is a **Flutter** mobile application designed to automate and streamline waste management and recycling processes for **Customers (Nasabah)** and **Waste Bank Officers/Treasurers (Petugas/Bendahara)**. The application promotes environmental sustainability by providing a **transparent, structured, and efficient** digital system for managing waste savings and turning trash into economic value.
 
 -----
 
 ## Key Features
 
-### For Customers (Nasabah)
+### For Nasabah (Customers)
 
-  - **Registration & Authentication:** Secure sign-up using NIK (Nomor Induk Kependudukan) and robust login functionality.
-  - **Waste Deposit:** Easily initiate waste deposits, specifying waste types and estimated weights.
-  - **Savings Account (Buku Tabungan):** Track your current balance and view a detailed history of all deposits and withdrawals.
-  - **Performance Analytics:** Visualize your contributions with insightful charts, showing the percentage of different waste types in your total deposits.
-  - **Withdrawal Requests:** Conveniently request cash withdrawals from your accumulated savings balance.
-  - **Profile Management:** Update personal information and change your password as needed.
-  - **Print Reports:** Generate and print PDF reports of your savings account activity and historical performance.
+  * **Registration & Authentication:** Secure sign-up using the **NIK (National Identity Number)** and robust login functionality.
+  * **Digital Waste Savings:** Track your current Rupiah balance and view a detailed history of all deposits and withdrawals.
+  * **Deposit Request:** Easily initiate waste deposit requests, specifying waste types and estimated weights.
+  * **Contribution Analytics:** Visualize your contributions with insightful charts (using `fl_chart`), showing the percentage distribution of different waste types.
+  * **Withdrawal Requests:** Conveniently request cash withdrawals from your accumulated savings balance.
+  * **PDF Reports:** Generate and print PDF reports of your savings account activity and historical performance.
 
-### For Collectors (Pengepul)
+### For Petugas / Bendahara (Officers/Treasurers)
 
-  - **Registration & Authentication:** Secure sign-up with NIK and login capabilities.
-  - **Waste Pricing Management:** Set and adjust prices per kilogram (kg) for various waste categories (Organic, Inorganic – including Plastic, Paper, Metal, Glass, etc.).
-  - **Deposit Validation:** Receive and validate customer waste deposit requests, updating their savings balance based on actual weight and current prices.
-  - **Operational Analytics:** Access charts and reports detailing collected waste volume, distribution by waste type, and overall operational performance.
-  - **Profile Management:** Update personal information and change your password.
-  - **Print Reports:** Generate and print PDF reports of your collection history and operational performance.
+  * **Deposit Validation:** Receive and validate customer waste deposit requests, updating their savings balance based on actual weight and current prices.
+  * **Waste Pricing Management:** Set and adjust prices per kilogram (kg) for various waste categories (Plastic, Paper, Metal, Glass, etc.).
+  * **Operational Analytics:** Access charts and reports detailing collected waste volume, distribution by waste type, and overall operational performance.
+  * **Product & Event Management:** Manage the catalog of recycled products (for display/education only) and community event schedules, including image uploads to Cloudinary.
+  * **Reporting:** Generate and print PDF reports of collection history and operational performance.
 
 -----
 
 ## Technology Stack
 
-  - **Frontend:** Flutter (Dart)
-  - **Backend:** Firebase (Authentication, Cloud Firestore)
-  - **State Management:** Provider
-  - **Charting:** `fl_chart`
-  - **PDF Generation:** `pdf`, `path_provider`, `open_filex`
+  * **Frontend:** Flutter (Dart)
+  * **Backend & DB:** Firebase (Authentication, Cloud Firestore)
+  * **Image Storage:** **Cloudinary** (For storing Product and Event images)
+  * **State Management:** Provider
+  * **Charting:** `fl_chart`
+  * **PDF Generation:** `pdf`, `path_provider`, `open_filex`
 
 -----
 
 ## Installation Guide
 
-Follow these steps to get the Bank Sampah App up and running on your local machine.
+Follow these steps to get the SIMARU application up and running on your local machine.
 
 ### Prerequisites
 
-  - [**Flutter SDK**](https://flutter.dev/docs/get-started/install) (Stable channel recommended)
-  - [**Firebase CLI**](https://firebase.google.com/docs/cli)
-  - **Node.js** (required for Firebase CLI)
-  - A **Google account** to access the Firebase Console.
+  * [**Flutter SDK**](https://flutter.dev/docs/get-started/install) (Stable channel recommended)
+  * [**Firebase CLI**](https://firebase.google.com/docs/cli)
+  * **Node.js** (required for Firebase CLI)
+  * A **Google account** for Firebase Console access.
+  * A **Cloudinary account** (for image storage).
 
 ### Step 1: Clone the Repository
 
@@ -60,31 +57,29 @@ git clone https://github.com/Dika1485/bank_sampah_app.git
 cd bank_sampah_app
 ```
 
-### Step 2: Firebase Project Setup
+### Step 2: Firebase & Cloudinary Setup
 
-1.  **Create a Firebase Project:**
-      - Go to the [**Firebase Console**](https://console.firebase.google.com/).
-      - Click "Add project" and follow the instructions to create a new project.
-2.  **Add Android and iOS Apps:**
-      - In your Firebase project, add an **Android app**. Provide your Android package name (you'll find this as `applicationId` in `android/app/build.gradle`).
-      - **Crucially, provide your SHA-1 debug signing certificate.** You can get this by running:
-          - **macOS/Linux:** `keytool -list -v -keystore ~/.android/debug.keystore -alias androiddebugkey -storepass android -keypass android`
-          - **Windows:** `keytool -list -v -keystore "%USERPROFILE%\.android\debug.keystore" -alias androiddebugkey -storepass android -keypass android`
-      - **Download `google-services.json`** and place it in your Flutter project's `android/app/` directory.
-      - Add an **iOS app**. Provide your iOS bundle ID (you'll find this in Xcode or `ios/Runner.xcodeproj/project.pbxproj`).
-      - **Download `GoogleService-Info.plist`** and place it in `ios/Runner/` (ensure it's added to the Runner target in Xcode).
-3.  **Enable Firebase Services:**
-      - In the Firebase Console, navigate to:
-          - **Authentication:** Go to "Build" \> "Authentication" \> "Sign-in method" and enable "Email/Password."
-          - **Firestore Database:** Go to "Build" \> "Firestore Database" and create a database (start in test mode for development).
-          - **Storage:** Go to "Build" \> "Storage" and create a storage bucket (Anda mungkin melihat pesan tentang *upgrade*, namun untuk versi ini tanpa unggah KTP, itu tidak terlalu kritis kecuali Anda membutuhkan penyimpanan gambar/file lain).
-4.  **Configure Firebase in Flutter:**
-      - Open your terminal in the root of your Flutter project.
-      - Run: `flutterfire configure`
-      - Follow the prompts to select your Firebase project and desired platforms. This command automatically generates the `lib/firebase_options.dart` file, containing your Firebase configuration.
-5.  **Set up Firebase Security Rules:**
-      - In the Firebase Console, go to **Firestore Database \> "Rules"** and **Firebase Storage \> "Rules"**.
-      - Implement security rules as outlined in your project's security documentation (atau seperti yang dibahas sebelumnya) untuk melindungi data Anda. **Ingatlah untuk menyesuaikan aturan "mode uji" untuk lingkungan produksi.**
+#### A. Firebase Configuration
+
+1.  **Create a Firebase Project:** Create a new project in the [**Firebase Console**](https://console.firebase.google.com/).
+2.  **Add Apps:** Add both **Android** and **iOS** apps. Ensure you provide the **Android package name** and the **SHA-1 debug signing certificate** (crucial for Authentication).
+3.  **Download Config Files:**
+      * Download **`google-services.json`** and place it in the `android/app/` directory.
+      * Download **`GoogleService-Info.plist`** and place it in `ios/Runner/`.
+4.  **Enable Services:**
+      * **Authentication:** Enable **Email/Password**.
+      * **Cloud Firestore:** Create a database (start in test mode for development).
+5.  **Configure FlutterFire:**
+    ```bash
+    flutterfire configure
+    ```
+    (This command generates `lib/firebase_options.dart`.)
+6.  **Security Rules:** Review and implement strict security rules in **Firestore Database \> "Rules"** to protect sensitive data like NIK and balances.
+
+#### B. Cloudinary Configuration
+
+1.  **Get Credentials:** Log into your Cloudinary account and note your **Cloud Name**, **API Key**, and **API Secret**.
+2.  **Integration:** Input these credentials into the appropriate configuration file or environment variables within your Flutter project to authorize image uploads.
 
 ### Step 3: Install Dependencies
 
@@ -94,27 +89,10 @@ From your project's root directory in the terminal, run:
 flutter pub get
 ```
 
-### Step 4: Configure Application Icons
+### Step 4: Configure Application Icons (Optional)
 
-1.  **Prepare your icon image:** Place your preferred app icon (e.g., `app_icon.png`, ideally 1024x1024px with a transparent background) in the `assets/icon/` directory within your project.
-2.  **Update `pubspec.yaml`:** Make sure the `flutter_launcher_icons` package is configured and your assets path is correctly declared:
-    ```yaml
-    # ... (other dev_dependencies)
-    flutter_launcher_icons: "^0.13.1" # Ensure this version or compatible is present
-
-    flutter_launcher_icons:
-      android: "launcher_icon"
-      ios: true
-      image_path: "assets/icon/app_icon.png" # Adjust if your file name/path differs
-      min_sdk_android: 21
-
-    flutter:
-      uses-material-design: true
-      assets:
-        - assets/
-        - assets/icon/ # Ensures all files in this directory are accessible
-    ```
-3.  **Generate icons:**
+1.  **Prepare Icon:** Place your app icon (e.g., `app_icon.png`) in `assets/icon/`.
+2.  **Generate Icons:**
     ```bash
     flutter pub run flutter_launcher_icons
     ```
@@ -125,12 +103,10 @@ flutter pub get
 flutter run
 ```
 
-This command will launch the application on your connected device or emulator.
+The application will launch on your connected device or emulator.
 
 -----
 
 ## License
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
-
------
+This project is licensed under the MIT License. See the [LICENSE](https://www.google.com/search?q=LICENSE) file for details.
